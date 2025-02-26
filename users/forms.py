@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.models import User
+from users.models import CustomUser
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 
@@ -40,7 +40,7 @@ class RegisterForm(UserCreationForm):
                                                                   }))
 
     class Meta:
-        model = User
+        model = CustomUser
         fields = ['first_name', 'last_name', 'username', 'email', 'password1', 'password2']
 
 class LoginForm(AuthenticationForm):
@@ -60,5 +60,5 @@ class LoginForm(AuthenticationForm):
     remember_me = forms.BooleanField(required=False)
 
     class Meta:
-        model = User
+        model = CustomUser
         fields = ['username', 'password', 'remember_me']
