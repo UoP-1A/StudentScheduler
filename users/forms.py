@@ -1,5 +1,5 @@
 from django import forms
-from users.models import CustomUser
+from users.models import CustomUser, FriendRequest
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 
@@ -62,3 +62,8 @@ class LoginForm(AuthenticationForm):
     class Meta:
         model = CustomUser
         fields = ['username', 'password', 'remember_me']
+
+class FriendRequestForm(forms.ModelForm):
+    class Meta:
+        model = FriendRequest
+        fields = ['to_user']

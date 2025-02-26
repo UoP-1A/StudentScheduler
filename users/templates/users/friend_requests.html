@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Pending Friend Requests</h2>
+  {% for req in requests %}
+    <div class="request">
+      <p>{{ req.from_user.username }} wants to be friends</p>
+      <a href="{% url 'respond_request' req.id 'accept' %}">Accept</a>
+      <a href="{% url 'respond_request' req.id 'reject' %}">Reject</a>
+    </div>
+  {% empty %}
+    <p>No pending requests</p>
+  {% endfor %}
+{% endblock %}

@@ -29,6 +29,9 @@ if %errorlevel% neq 0 (
     echo No migrations needed.
 )
 
+echo Running Django tests...
+py manage.py test
+
 echo Starting Django development server...
 py manage.py runserver
 
