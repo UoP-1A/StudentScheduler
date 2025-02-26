@@ -1,0 +1,39 @@
+#calendar {
+    padding: 10px;
+    max-height: calc(100vh - 60px);
+}
+
+.fc-event-title, .fc-event-time {
+    white-space: normal;
+}
+
+.fc-toolbar, .fc-col-header, .fc-daygrid {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: white;
+}
+
+.fc-now-indicator {
+    width: 100%; 
+    left: 0 !important; 
+}
+
+.fc-event {
+    --event-bg-color: #3788d8; 
+    background-color: var(--event-bg-color);
+}
+
+.fc-event:hover {
+    cursor: pointer;
+    filter: brightness(0.875); 
+}
+
+#calendar-container {
+    height: 100%;
+}
+
+#calendar {
+    height: 100vh;
+    overflow-y: auto;
+}
