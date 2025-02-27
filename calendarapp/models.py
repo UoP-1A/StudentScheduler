@@ -11,13 +11,3 @@ class Calendar(models.Model):
 
     def __str__(self):
         return self.user.username + " - " + self.name
-
-# Notifications. is notification read? etc below
-class Notification(models.Model):
-    is_read = models.BooleanField(default=False)
-    message = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.user.username}: {self.message}"
