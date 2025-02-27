@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "calendarapp.apps.CalendarappConfig",
     "rest_framework",
+    "notifications",
 ]
 
 MIDDLEWARE = [
