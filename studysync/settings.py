@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "calendarapp.apps.CalendarappConfig",
     "rest_framework",
-    "notifications",
+    "notifications.apps.NotificationsConfig",
 ]
 
 MIDDLEWARE = [
@@ -64,7 +64,8 @@ TEMPLATES = [
         "DIRS": [
             os.path.join(BASE_DIR, "templates"),
             os.path.join(BASE_DIR, "calendarapp/templates"),
-            os.path.join(BASE_DIR, "users/templates")
+            os.path.join(BASE_DIR, "users/templates"),
+            os.path.join(BASE_DIR, "notifications/templates"),
         ],
         "APP_DIRS": True,
         "OPTIONS": {

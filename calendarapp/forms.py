@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from datetime import datetime
 from django.test import TestCase
 
-from .models import Event
+# from .models import Event
 
 
 class CalendarUploadForm(forms.ModelForm):
@@ -13,7 +13,7 @@ class CalendarUploadForm(forms.ModelForm):
         fields = ["name", "ics_file"]
     
 
-class EventForm(forms.ModelForm):
-    class Meta:
-        model = Event
-        fields = ['name', 'date', 'description']
+# class EventForm(forms.ModelForm):
+#     class Meta:
+#         model = Event
+#         fields = ['name', 'date', 'description']
