@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'notifications/style.css' %}">
+<h1>Notifications</h1>
+<ul>
+    {% for notification in notifications %}
+    <li>
+        <strong>{{ notification.message }}</strong>
+        <small>{{ notification.timestamp }}</small>
+        <a href="{% url 'mark_as_read' notification.id %}">Mark as Read</a>
+    </li>
+    {% empty %}
+    <li>No new notifications.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
