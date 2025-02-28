@@ -22,6 +22,7 @@ body, html {
   font-weight: bold;
   text-decoration: none;
   color: #fff;
+  float: left;
 }
 
 #global-navbar > div {

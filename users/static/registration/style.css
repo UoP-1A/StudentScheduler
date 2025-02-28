@@ -69,3 +69,42 @@ body {
 #register-button{
   transform: translateX(-21%);
 }
+
+/* Delete Account Page Style */
+
+/* Light red for a warning to user*/
+.delete-account-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f8d7da; 
+}
+
+.delete-account-box {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* danger color */
+.delete-account-h1 {
+  margin-bottom: 20px;
+  color: #dc3545; 
+}
+
+/* Is Danger color */
+.delete-submit {
+  background-color: #dc3545; 
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* Darker shade on hover */
+.delete-submit:hover {
+  background-color: #c82333;
+}

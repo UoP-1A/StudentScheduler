@@ -29,7 +29,7 @@ SECRET_KEY = "django-insecure-=ejbhd50^44x1wufyq-0w!^d6y0x2(e7$nxak9i6hafd%jk*vg
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "calendarapp.apps.CalendarappConfig",
     "rest_framework",
+    "notifications.apps.NotificationsConfig",
 ]
 
 MIDDLEWARE = [
@@ -63,7 +64,8 @@ TEMPLATES = [
         "DIRS": [
             os.path.join(BASE_DIR, "templates"),
             os.path.join(BASE_DIR, "calendarapp/templates"),
-            os.path.join(BASE_DIR, "users/templates")
+            os.path.join(BASE_DIR, "users/templates"),
+            os.path.join(BASE_DIR, "notifications/templates"),
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -113,6 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = 'users.CustomUser'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

@@ -25,8 +25,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("calendar/", include("calendarapp.urls")),
-    path("accounts/", include("django.contrib.auth.urls")),
     path("accounts/", include("users.urls")),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("notifications/", include("notifications.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += [
