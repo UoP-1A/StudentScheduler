@@ -36,8 +36,8 @@
       <input type="hidden" name="next" value="{{ next }}" />
     </form>
 
-    <a href="{% url 'social:begin' 'github' %}" class="btn btn-link btn-lg active btn-block">Sign in with GitHub</a>
-    <a href="{% url 'social:begin' 'google-oauth2' %}" class="btn btn-link btn-lg active btn-block">Sign in with Google</a>
+    <a href="{% url 'social:begin' 'github' %}">Sign in with GitHub</a>
+    <a href="{% url 'social:begin' 'google-oauth2' %}">Sign in with Google</a>
     
     <p>
       <a href="{% url 'password_reset' %}">Lost password?</a>
