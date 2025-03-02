@@ -5,14 +5,15 @@ from django.core.files.storage import default_storage
 from django.contrib import messages
 
 from .forms import CalendarUploadForm
-from .models import Calendar
+from .models import Calendar, Event
 
 from rest_framework.decorators import api_view
 
+from common.util import preprocess_ics, processRrule
+
 from icalendar import Calendar as ICalCalendar
 from json import dumps
-
-from common.util import preprocess_ics, processRrule
+from datetime import datetime
 
 
 # Create your views here.
@@ -27,10 +28,26 @@ def upload_calendar(request):
             calendar = form.save(commit=False)
             calendar.user = request.user
             calendar.save()
+
+            parse_ics(calendar.ics_file.path, calendar)
             return redirect(to="/")
     else:
         form = CalendarUploadForm
     return render(request, "calendarapp/upload_calendar.html", {"form": form})
+
+def parse_ics(file_path, user_calendar):
+    with open(file_path, 'rb') as f:
+        calendar = ICalCalendar.from_ical(f.read())
+
+        for component in calendar.walk():
+            if component.name == "VEVENT":
+                event = Event(
+                    calendar=user_calendar,
+                    title=str(component.get('summary', 'Untitled Event'))[:255], # Only ensure first 255 characters.
+                    start=component.get('dtstart').dt if isinstance(component.get('dtstart').dt, datetime) else component.get('dtstart').dt,
+                    end=component.get('dtend').dt if isinstance(component.get('dtend').dt, datetime) else component.get('dtend').dt
+                )
+                event.save()
 
 @login_required
 @api_view(['GET'])
