@@ -6,3 +6,4 @@ python-dateutil
 djangorestframework
 pillow
 sphinx
+social-auth-app-django
