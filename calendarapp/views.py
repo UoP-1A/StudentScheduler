@@ -3,16 +3,14 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
-from django.utils.timezone import make_aware
+from django.utils.dateparse import parse_datetime
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
 
 from rest_framework.decorators import api_view
-from json import dumps
-
 from icalendar import Calendar as ICalCalendar
-from datetime import datetime
+
 from dateutil.rrule import rrulestr
 
 # Create your views here.
@@ -28,47 +26,51 @@ def upload_calendar(request):
     if request.method == "POST":
         form = CalendarUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            calendar = form.save(commit=False)
-            calendar.user = request.user
-            calendar.save()
+            name = form.cleaned_data["name"]
+            ics_file = request.FILES["ics_file"]
 
-            parse_ics(calendar.ics_file.path, calendar)
-            return redirect(to="/")
+            # Create calendar entry without file storage
+            calendar = Calendar.objects.create(user=request.user, name=name)
+
+            # Process the ICS file without saving the file
+            parse_ics(ics_file, calendar)
+            return redirect("/")
     else:
-        form = CalendarUploadForm
+        form = CalendarUploadForm()
+    
     return render(request, "calendarapp/upload_calendar.html", {"form": form})
 
-def parse_ics(file_path, user_calendar):
+def parse_ics(file, user_calendar):
     """
     This function opens the uploaded ICS file, iterates through each event,
     and creates an event object to store in the database.
     """
-    with open(file_path, 'rb') as f:
-        calendar = ICalCalendar.from_ical(f.read())
+    calendar = ICalCalendar.from_ical(file.read())
 
-        for component in calendar.walk():
-            if component.name == "VEVENT":
-                title = str(component.get("SUMMARY", "Untitled Event"))[:255]
-                start = component.get("DTSTART").dt.isoformat()
-                end = component.get("DTEND").dt.isoformat() if component.get("DTEND") else None
-                description = str(component.get("DESCRIPTION", ""))[:1000]
+    for component in calendar.walk():
+        if component.name == "VEVENT":
+            title = str(component.get("SUMMARY", "Untitled Event"))
+            start = component.get("DTSTART").dt.isoformat()
+            end = component.get("DTEND").dt.isoformat() if component.get("DTEND") else None
+            description = str(component.get("DESCRIPTION", ""))
 
-                # Handle recurring events (rrule)
-                rrule = component.get("RRULE")
+            # Handle recurring events (rrule)
+            rrule = component.get("RRULE")
 
-                rrule_str = None
-                if rrule:
-                    rrule_str = rrulestr(rrule.to_ical().decode('utf-8'), dtstart=component.get("DTSTART").dt)  # Convert rrule to string
+            rrule_str = None
+            if rrule:
+                # Convert ical module rrule to fullcalendar readable string
+                rrule_str = rrulestr(rrule.to_ical().decode('utf-8'), dtstart=component.get("DTSTART").dt)
 
-                event = Event(
-                    calendar = user_calendar,
-                    title = title,
-                    start = start,
-                    end = end,
-                    description = description,
-                    rrule = rrule_str
-                )
-                event.save()
+            event = Event(
+                calendar = user_calendar,
+                title = title,
+                start = start,
+                end = end,
+                description = description,
+                rrule = rrule_str
+            )
+            event.save()
 
 @login_required
 @api_view(['GET'])
@@ -97,6 +99,36 @@ def prep_events(request):
         event_list.append(event_data)
 
     return JsonResponse(event_list, safe=False, encoder=DjangoJSONEncoder)
+
+@login_required
+@api_view(['POST'])
+def update_event(request):
+    event_id = request.data.get('id')
+    start_str = request.data.get('start')
+    end_str = request.data.get('end')
+
+    # Validate required fields
+    if not event_id or not start_str:
+        return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+
+    try:
+        # Parse datetimes only if strings are provided
+        new_start = parse_datetime(start_str)
+        new_end = parse_datetime(end_str) if end_str else None
+
+        event = Event.objects.get(id=event_id)
+        if event.calendar.user != request.user:
+            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+
+        event.start = new_start
+        event.end = new_end
+        event.save()
+        return JsonResponse({'status': 'success', 'event_id': event_id})
+
+    except ValueError as e:
+        return JsonResponse({'status': 'error', 'message': f'Invalid datetime format: {str(e)}'}, status=400)
+    except Event.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Event not found'}, status=404)
 
 @login_required
 @api_view(['POST'])
