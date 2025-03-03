@@ -12,8 +12,3 @@ class CalendarUploadForm(forms.ModelForm):
         model = Calendar
         fields = ["name", "ics_file"]
     
-
-# class EventForm(forms.ModelForm):
-#     class Meta:
-#         model = Event
-#         fields = ['name', 'date', 'description']

@@ -1,20 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.core.files.storage import default_storage
 from django.contrib import messages
+from django.core.serializers.json import DjangoJSONEncoder
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
 
 from rest_framework.decorators import api_view
-
-from common.util import preprocess_ics, processRrule
+from json import dumps
 
 from icalendar import Calendar as ICalCalendar
-from json import dumps
-from datetime import datetime
-
 
 # Create your views here.
 def index(request):
@@ -22,6 +18,10 @@ def index(request):
 
 @login_required
 def upload_calendar(request):
+    """
+    This view is called when you upload a calendar through the upload form. It will store the calendar ICS file.
+    It then processes this file to its events, and stores them in the database using the Event model.
+    """
     if request.method == "POST":
         form = CalendarUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -36,16 +36,35 @@ def upload_calendar(request):
     return render(request, "calendarapp/upload_calendar.html", {"form": form})
 
 def parse_ics(file_path, user_calendar):
+    """
+    This function opens the uploaded ICS file, iterates through each event,
+    and creates an event object to store in the database.
+    """
     with open(file_path, 'rb') as f:
         calendar = ICalCalendar.from_ical(f.read())
 
         for component in calendar.walk():
             if component.name == "VEVENT":
+                # Extract event details
+                title = str(component.get('summary', 'Untitled Event'))[:255]  # Limit to 255 characters
+                start = component.get('dtstart').dt.isoformat()
+                end = component.get('dtend').dt.isoformat() if component.get('dtend') else None
+                description = component.get('description')[:1000] if component.get('description') else None
+                rrule = component.get('rrule')
+
+                # Handle recurring events (rrule)
+                rrule_str = None
+                if rrule:
+                    rrule_str = rrule.to_ical().decode('utf-8')  # Convert rrule to string
+
+                # Create and save the event
                 event = Event(
-                    calendar=user_calendar,
-                    title=str(component.get('summary', 'Untitled Event'))[:255], # Only ensure first 255 characters.
-                    start=component.get('dtstart').dt if isinstance(component.get('dtstart').dt, datetime) else component.get('dtstart').dt,
-                    end=component.get('dtend').dt if isinstance(component.get('dtend').dt, datetime) else component.get('dtend').dt
+                    calendar = user_calendar,
+                    title = title,
+                    start = start,
+                    end = end,
+                    description = description,
+                    rrule = f"DTSRART:{start}\nRRULE:" + rrule_str if rrule_str else rrule_str  # Store the rrule as a string
                 )
                 event.save()
 
@@ -53,25 +72,37 @@ def parse_ics(file_path, user_calendar):
 @api_view(['GET'])
 def prep_events(request):
     """
-    This function loops over the list of calendar events, and handles rrules for repetition.
+    This function loops over the list of calendar events and handles rrules for repetition.
+    They are then returned in a JsonResponse to the frontend FullCalendar.
     """
-    all_events = []
+    user = request.user
+    events = Event.objects.filter(calendar__user=user)
 
-    calendars = Calendar.objects.all()
+    event_list = []
+    for e in events:
+        event_data = {
+            "id": e.id,
+            "title": e.title,
+            "start": e.start.isoformat(),
+            "end": e.end.isoformat() if e.end else None,
+            "description": e.description,
+        }
 
-    for calendar in calendars:
-        ics_path = calendar.ics_file.path
-        if default_storage.exists(ics_path):
-            ics_content = preprocess_ics(ics_path)
-            parsed_calendar = ICalCalendar.from_ical(ics_content)
-            events = processRrule(parsed_calendar)
-            all_events.extend(events)
+        # Add rrule if it exists
+        if e.rrule:
+            event_data["rrule"] = e.rrule
 
-    return HttpResponse(dumps(all_events), content_type="application/json")
+        event_list.append(event_data)
+
+    print(dumps(event_list, cls=DjangoJSONEncoder))  # Debugging
+    return JsonResponse(event_list, safe=False, encoder=DjangoJSONEncoder)
 
 @login_required
 @api_view(['POST'])
 def delete_calendar(request, calendar_id):
+    """
+    When a user deletes a calendar from their profile, this view is caleld to handle the deletion of the calendar file and its events.
+    """
     calendar = get_object_or_404(Calendar, id=calendar_id, user=request.user)
 
     calendar.ics_file.delete()
