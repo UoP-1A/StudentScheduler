@@ -11,3 +11,11 @@ class Calendar(models.Model):
 
     def __str__(self):
         return self.user.username + " - " + self.name
+
+class Event(models.Model):
+    calendar = models.ForeignKey(Calendar, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    start = models.DateTimeField()
+    end = models.DateTimeField(null=True, blank=True)
+    description = models.TextField(blank=True)
+    rrule = models.TextField(blank=True, null=True)
