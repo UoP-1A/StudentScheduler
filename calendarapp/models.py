@@ -12,14 +12,10 @@ class Calendar(models.Model):
     def __str__(self):
         return self.user.username + " - " + self.name
 
-class CalendarEvent(models.Model):
-    title = models.CharField(max_length=200)
+class Event(models.Model):
+    calendar = models.ForeignKey(Calendar, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
     description = models.TextField(blank=True)
-    location = models.CharField(max_length=255, blank=True)
-    ical_uid = models.CharField(max_length=255, unique=True)
-    is_recurring = models.BooleanField(default=False)
     rrule = models.TextField(blank=True, null=True)
-    exdates = models.JSONField(blank=True, null=True) 
-    duration = models.DurationField(null=True) 

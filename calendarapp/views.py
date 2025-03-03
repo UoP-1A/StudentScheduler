@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.timezone import make_aware
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
@@ -11,6 +12,8 @@ from rest_framework.decorators import api_view
 from json import dumps
 
 from icalendar import Calendar as ICalCalendar
+from datetime import datetime
+from dateutil.rrule import rrulestr
 
 # Create your views here.
 def index(request):
@@ -45,26 +48,25 @@ def parse_ics(file_path, user_calendar):
 
         for component in calendar.walk():
             if component.name == "VEVENT":
-                # Extract event details
-                title = str(component.get('summary', 'Untitled Event'))[:255]  # Limit to 255 characters
-                start = component.get('dtstart').dt.isoformat()
-                end = component.get('dtend').dt.isoformat() if component.get('dtend') else None
-                description = component.get('description')[:1000] if component.get('description') else None
-                rrule = component.get('rrule')
+                title = str(component.get("SUMMARY", "Untitled Event"))[:255]
+                start = component.get("DTSTART").dt.isoformat()
+                end = component.get("DTEND").dt.isoformat() if component.get("DTEND") else None
+                description = str(component.get("DESCRIPTION", ""))[:1000]
 
                 # Handle recurring events (rrule)
+                rrule = component.get("RRULE")
+
                 rrule_str = None
                 if rrule:
-                    rrule_str = rrule.to_ical().decode('utf-8')  # Convert rrule to string
+                    rrule_str = rrulestr(rrule.to_ical().decode('utf-8'), dtstart=component.get("DTSTART").dt)  # Convert rrule to string
 
-                # Create and save the event
                 event = Event(
                     calendar = user_calendar,
                     title = title,
                     start = start,
                     end = end,
                     description = description,
-                    rrule = f"DTSRART:{start}\nRRULE:" + rrule_str if rrule_str else rrule_str  # Store the rrule as a string
+                    rrule = rrule_str
                 )
                 event.save()
 
@@ -94,7 +96,6 @@ def prep_events(request):
 
         event_list.append(event_data)
 
-    print(dumps(event_list, cls=DjangoJSONEncoder))  # Debugging
     return JsonResponse(event_list, safe=False, encoder=DjangoJSONEncoder)
 
 @login_required
