@@ -9,8 +9,8 @@ from .forms import CalendarUploadForm
 from .models import Calendar, Event
 
 from rest_framework.decorators import api_view
-
 from icalendar import Calendar as ICalCalendar
+
 from dateutil.rrule import rrulestr
 
 # Create your views here.
@@ -39,7 +39,6 @@ def upload_calendar(request):
         form = CalendarUploadForm()
     
     return render(request, "calendarapp/upload_calendar.html", {"form": form})
-
 
 def parse_ics(file, user_calendar):
     """
