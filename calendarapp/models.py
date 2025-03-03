@@ -6,7 +6,6 @@ from users.models import CustomUser
 class Calendar(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="calendars")
     name = models.CharField(max_length=255)
-    ics_file = models.FileField(upload_to="calendars/")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -14,7 +13,7 @@ class Calendar(models.Model):
 
 class Event(models.Model):
     calendar = models.ForeignKey(Calendar, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
+    title = models.TextField()
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
     description = models.TextField(blank=True)

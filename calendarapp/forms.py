@@ -7,8 +7,6 @@ from django.test import TestCase
 # from .models import Event
 
 
-class CalendarUploadForm(forms.ModelForm):
-    class Meta:
-        model = Calendar
-        fields = ["name", "ics_file"]
-    
+class CalendarUploadForm(forms.Form):
+    name = forms.CharField(max_length=255)
+    ics_file = forms.FileField()
