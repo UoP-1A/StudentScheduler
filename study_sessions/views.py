@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 from django.views import View
+from django.http import JsonResponse
+from .models import StudySession
 
 from .forms import StudySessionForm
 
@@ -21,3 +23,8 @@ class CreateStudySessionView(View):
             return redirect(to="/")
         
         return render(request, self.template_name, {"form": form})
+    
+def get_sessions(request):
+    sessions = StudySession.objects.all().values()
+    #return JsonResponse(list(sessions), safe=False)
+    return JsonResponse([], safe=False)
