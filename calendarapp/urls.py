@@ -1,11 +1,12 @@
 from django.urls import path
 
-from .views import index, prep_events, upload_calendar, delete_calendar
+from . import views
 
 
 urlpatterns = [
-    path("", index, name="index"),
-    path("api/get-calendar/", prep_events, name="prep_events"),
-    path("upload-calendar/", upload_calendar, name="upload_calendar"),
-    path("delete-calendar/<int:calendar_id>/", delete_calendar, name="delete_calendar")
+    path("", views.index, name="index"),
+    path("get-calendar/", views.prep_events, name="prep_events"),
+    path("upload-calendar/", views.upload_calendar, name="upload_calendar"),
+    path("delete-calendar/<int:calendar_id>/", views.delete_calendar, name="delete_calendar"),
+    path('update-event/', views.update_event, name='update_event'),
 ] 
