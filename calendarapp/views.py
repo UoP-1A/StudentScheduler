@@ -95,6 +95,8 @@ def prep_events(request):
         # Add rrule if it exists
         if e.rrule:
             event_data["rrule"] = e.rrule
+        if e.end:
+            event_data["duration"] = str(e.duration) if e.duration else None
 
         event_list.append(event_data)
 
@@ -138,7 +140,6 @@ def delete_calendar(request, calendar_id):
     """
     calendar = get_object_or_404(Calendar, id=calendar_id, user=request.user)
 
-    calendar.ics_file.delete()
     calendar.delete()
     messages.success(request, "Calendar deleted successfully.")
 

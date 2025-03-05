@@ -1,6 +1,7 @@
 from django.db import models
 from users.models import CustomUser
 
+from datetime import datetime
 
 # Create your models here.
 class Calendar(models.Model):
@@ -16,5 +17,22 @@ class Event(models.Model):
     title = models.TextField()
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True)
     description = models.TextField(blank=True)
     rrule = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        # Ensure start and end are datetime objects
+        if isinstance(self.start, str):
+            from django.utils.dateparse import parse_datetime
+            self.start = parse_datetime(self.start)  # Convert string to datetime
+
+        if isinstance(self.end, str):
+            from django.utils.dateparse import parse_datetime
+            self.end = parse_datetime(self.end)  # Convert string to datetime
+
+        # Calculate duration if end is provided
+        if self.end and self.start:
+            self.duration = self.end - self.start
+
+        super().save(*args, **kwargs)
