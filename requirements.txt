@@ -6,3 +6,4 @@ python-dateutil
 djangorestframework
 pillow
 sphinx
+sphinx_rtd_theme

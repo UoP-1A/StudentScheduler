@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.views import View
+from models. import events
 
 from .models import CustomUser, FriendRequest
 from .forms import RegisterForm, LoginForm
@@ -126,3 +127,23 @@ def user_list(request):
     users = CustomUser.objects.exclude(id=current_user.id).exclude(id__in=friends).exclude(id__in=sent_requests).exclude(id__in=received_requests)
     
     return render(request, 'users/user_list.html', {'users': users})
+
+class EventManager:
+    def __init__(self):
+        self.events = event.objects.all()
+
+    def create_event(self, name, date, description=""):
+        Event.objects.create(name=name, date=date, description=description)
+
+    def delete_event(self, event_id):
+        Event.objects.filter(id=event_id).delete()
+
+    def edit_event(self, event_id, new_name=None, new_date=None, new_description=None):
+        event = Event.objects.get(id=event_id)
+        if new_name:
+            event.name = new_name
+        if new_date:
+            event.date = new_date
+        if new_description is not None:
+            event.description = new_description
+        event.save()
