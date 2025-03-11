@@ -1,0 +1,39 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+	<link href="{% static 'registration/style.css' %}" rel="stylesheet">
+
+    <title>
+      {% block title %}
+
+      {% endblock %}
+    </title>
+  </head>
+  <body>
+    <nav id="global-navbar">
+      <a href="/">Home</a>
+
+      <div id="nav-buttons">
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}">Profile</a>
+          <a href="{% url 'upload_calendar' %}">Upload</a>
+          <form id="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}">Sign in</a>
+        {% endif %}
+      </div>
+    </nav>
+
+    {% block content %}
+
+    {% endblock %}
+  </body>
+</html>
