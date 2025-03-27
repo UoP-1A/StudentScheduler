@@ -22,7 +22,17 @@ def create(request):
 
 def get_sessions(request):
     sessions = StudySession.objects.all()
-    context = {
-        'sessions': sessions
-    }
-    return render(request, 'study_sessions/sessions.html', context)
+    sessions_list = []
+    for session in sessions:
+        sessions_list.append({
+            'id': session.id,
+            'title': session.title,
+            'description': session.description,
+            'start_time': session.start_time,
+            'end_time': session.end_time,
+            'date': session.date,
+            'is_recurring': session.is_recurring,
+            'host_id': session.host_id,
+            'calendar_id': session.calendar_id_id,
+        })
+    return JsonResponse(sessions_list, safe=False)
