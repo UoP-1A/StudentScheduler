@@ -13,7 +13,9 @@ def create(request):
         print(request.POST)
         form = StudySessionForm(request.POST)
         if form.is_valid():
-            form.save()
+            study_session = form.save(commit=False)
+            study_session.host = request.user
+            study_session.save()
     context = {
         'form': form
     }
