@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} My Modules {% endblock title %}
+{% block content %}
+    
+<ul>
+    {% for module in user.modules.all %}
+        <li>
+            <strong>{{ module.name }}</strong>
+            <ul>
+                {% for grade in module.grades.all %}
+                    <li>
+                        Grade: {{ grade.grade }} | Weight: {{ grade.weight }}
+                    </li>
+                {% empty %}
+                    <li>No grades available for this module.</li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% empty %}
+        <li>No modules available.</li>
+    {% endfor %}
+</ul>
+
+{% endblock content %}
