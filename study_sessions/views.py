@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import StudySession
 
-from .forms import StudySessionForm
+from .forms import StudySessionForm, RecurringSessionForm
 
 @csrf_exempt
 def create(request):
@@ -16,11 +16,29 @@ def create(request):
             study_session = form.save(commit=False)
             study_session.host = request.user
             study_session.save()
+
+            if study_session.is_recurring:
+                return redirect(request, 'create_recurring', session_id=study_session.id)
+            else:
+                return redirect('./')
     context = {
         'form': form
     }
     return render(request, 'study_sessions/create.html', context)
 
+def create_recurring(request, session_id):
+    session = StudySession.objects.get(id=session_id)
+    form = RecurringSessionForm()
+    if request.method == 'POST':
+        form = RecurringSessionForm(request.POST)
+        if form.is_valid():
+            recurring_session = form.save(commit=False)
+            recurring_session.session_id = session.id
+            recurring_session.save()
+    context = {
+        'form': form
+    }
+    return render(request, './', context)
 
 def get_sessions(request):
     sessions = StudySession.objects.all()
