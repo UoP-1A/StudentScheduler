@@ -9,6 +9,16 @@ class Module(models.Model):
     user = models.ForeignKey(CustomUser, related_name="modules", on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
 
+    def overall_grade(self):
+        grades = self.grades.all()
+        if not grades:
+            return None
+        total_weight = sum(grade.weight for grade in grades)
+        if total_weight == 0:
+            return None
+        weighted_sum = sum(grade.grade * grade.weight for grade in grades)
+        return round(weighted_sum / total_weight, 2)
+
     def save(self, *args, **kwargs):
         if self.user.modules.count() >= 6 and not self.pk:
             raise ValidationError("A user cannot have more than 6 modules.")
