@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.dateparse import parse_datetime
+from django.core.exceptions import ValidationError
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
@@ -28,6 +29,10 @@ def upload_calendar(request):
         if form.is_valid():
             name = form.cleaned_data["name"]
             ics_file = request.FILES["ics_file"]
+
+            # Return an error if the file is not an ICS filestream
+            if not ics_file.name.endswith(".ics"):
+                form.add_error("ics_file", ValidationError)
 
             # Create calendar entry without file storage
             calendar = Calendar.objects.create(user=request.user, name=name)
@@ -87,6 +92,7 @@ def prep_events(request):
         event_data = {
             "id": e.id,
             "title": e.title,
+            "type": e.type,
             "start": e.start.isoformat(),
             "end": e.end.isoformat() if e.end else None,
             "description": e.description,
