@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "calendarapp.apps.CalendarappConfig",
     "rest_framework",
     "notifications.apps.NotificationsConfig",
+    "study_sessions.apps.StudySessionsConfig",
     "social_django",
 ]
 
@@ -67,6 +68,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, "calendarapp/templates"),
             os.path.join(BASE_DIR, "users/templates"),
             os.path.join(BASE_DIR, "notifications/templates"),
+            os.path.join(BASE_DIR, "study_sessions/templates"),
         ],
         "APP_DIRS": True,
         "OPTIONS": {

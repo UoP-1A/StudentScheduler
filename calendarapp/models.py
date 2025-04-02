@@ -13,6 +13,11 @@ class Calendar(models.Model):
         return self.user.username + " - " + self.name
 
 class Event(models.Model):
+
+    class Types(models.TextChoices):
+        EVENT = "event", "Event"
+        STUDY = "study", "Study"
+
     calendar = models.ForeignKey(Calendar, on_delete=models.CASCADE)
     title = models.TextField()
     start = models.DateTimeField()
@@ -36,3 +41,4 @@ class Event(models.Model):
             self.duration = self.end - self.start
 
         super().save(*args, **kwargs)
+    type = models.CharField(max_length=10, choices=Types.choices)
