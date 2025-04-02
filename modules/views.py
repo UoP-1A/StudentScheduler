@@ -26,3 +26,13 @@ def add_module(request):
 @api_view(['POST'])
 def add_grade(request):
     pass
+
+@login_required
+@api_view(['DELETE'])
+def delete_module(request):
+    pass
+
+@login_required
+@api_view(['DELETE'])
+def delete_grade(request):
+    pass
