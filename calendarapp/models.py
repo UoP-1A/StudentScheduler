@@ -25,7 +25,7 @@ class Event(models.Model):
     duration = models.DurationField(null=True, blank=True)
     description = models.TextField(blank=True)
     rrule = models.TextField(blank=True, null=True)
-    type = models.CharField(max_length=10, choices=Types.choices)
+    type = models.CharField(max_length=10, choices=Types.choices, default=Types.EVENT)
 
 
     def save(self, *args, **kwargs):
