@@ -39,24 +39,24 @@ body {
 }
 
 .login-form {
+  display: flex;
+  flex-direction: column;
   text-align: center;
-  position: relative;
   padding-bottom: 50px;
 }
 
 .login-form input[type="text"], 
-.login-form input[type="password"] {
-  padding: 10px;
-  border-radius: 10px;
-}
-
+.login-form input[type="password"],
 .login-form input[type="submit"] {
   padding: 10px;
   border-radius: 10px;
-  width: 193px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-31%);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-form input[type="submit"] {
+  font-weight: bold;
+  margin: 0 auto;
 }
 
 .login-h1 {

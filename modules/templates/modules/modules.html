@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} My Modules {% endblock title %}
+{% block content %}
+    
+<ul>
+    {% for module in user.modules.all %}
+        <li>
+            <strong>{{ module.name }}</strong>
+            <p>Overall Grade: 
+                {% if module.overall_grade %}
+                    {{ module.overall_grade|floatformat:2 }}
+                {% else %}
+                    No grades available.
+                {% endif %}
+            </p>
+            <ul>
+                {% for grade in module.grades.all %}
+                    <li>
+                        Grade: {{ grade.grade }} | Weight: {{ grade.weight }}
+                    </li>
+                {% empty %}
+                    <li>No grades available for this module.</li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% empty %}
+        <li>No modules available.</li>
+    {% endfor %}
+</ul>
+{% endblock content %}
