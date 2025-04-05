@@ -4,7 +4,7 @@ from users.models import CustomUser
 # Create your models here.
 class Calendar(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="calendars")
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
