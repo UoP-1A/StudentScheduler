@@ -1,5 +1,5 @@
 django
-psycopg[binary]
+psycopg
 python-dotenv
 icalendar
 python-dateutil
