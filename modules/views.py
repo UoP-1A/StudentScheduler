@@ -10,9 +10,6 @@ from .models import Module, Grade
 
 # Create your views here.
 
-def index(request):
-    return redirect('/modules')
-
 @login_required
 @api_view(['GET'])
 def get_modules(request):
