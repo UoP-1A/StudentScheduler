@@ -30,11 +30,11 @@ class Event(models.Model):
         # Ensure start and end are datetime objects
         if isinstance(self.start, str):
             from django.utils.dateparse import parse_datetime
-            self.start = parse_datetime(self.start)  # Convert string to datetime
+            self.start = parse_datetime(self.start) 
 
         if isinstance(self.end, str):
             from django.utils.dateparse import parse_datetime
-            self.end = parse_datetime(self.end)  # Convert string to datetime
+            self.end = parse_datetime(self.end)
 
         # Calculate duration if end is provided
         if self.end and self.start:
