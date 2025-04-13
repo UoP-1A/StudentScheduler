@@ -1,7 +1,11 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from django.contrib.auth import get_user_model
-from calendarapp.models import Calendar
+from datetime import timedelta
+
+from calendarapp.models import Calendar, Event
+
 
 CustomUser = get_user_model()
 
@@ -131,3 +135,202 @@ class CalendarModelTests(TestCase):
         calendar = Calendar(user=self.user, name='')
         with self.assertRaises(ValidationError) as cm:
             calendar.full_clean()
+
+class EventModelTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.calendar = Calendar.objects.create(
+            user=self.user,
+            name='Test Calendar'
+        )
+        self.now = timezone.now()
+        self.tomorrow = self.now + timedelta(days=1)
+
+    def test_create_event_with_required_fields(self):
+        """
+        Test creating an event with required fields
+        """
+        event = Event.objects.create(
+            calendar=self.calendar,
+            title='Test Event',
+            start=self.now
+        )
+        self.assertEqual(event.calendar, self.calendar)
+        self.assertEqual(event.title, 'Test Event')
+        self.assertEqual(event.start, self.now)
+        self.assertEqual(event.type, 'event')
+
+    def test_event_foreign_key_relationship(self):
+        """
+        Test the ForeignKey relationship to Calendar
+        """
+        event = Event.objects.create(
+            calendar=self.calendar,
+            title='Test Event',
+            start=self.now
+        )
+        self.assertEqual(event.calendar, self.calendar)
+        self.assertIn(event, self.calendar.event_set.all())
+
+    # Field Validation Tests
+    def test_title_required(self):
+        """
+        Test title cannot be blank
+        """
+        event = Event(
+            calendar=self.calendar,
+            title='',
+            start=self.now
+        )
+        with self.assertRaises(ValidationError):
+            event.full_clean()
+
+    def test_start_required(self):
+        """
+        Test start cannot be null
+        """
+        event = Event(
+            calendar=self.calendar,
+            title='Test Event',
+            start=None
+        )
+        with self.assertRaises(ValidationError):
+            event.full_clean()
+
+    def test_type_choices(self):
+        """
+        Test type field only accepts valid choices
+        """
+        valid_event = Event(
+            calendar=self.calendar,
+            title='Valid Event',
+            start=self.now,
+            type='event'
+        )
+        valid_event.full_clean()
+
+        invalid_event = Event(
+            calendar=self.calendar,
+            title='Invalid Event',
+            start=self.now,
+            type='invalid'
+        )
+        with self.assertRaises(ValidationError):
+            invalid_event.full_clean()
+
+    def test_save_with_string_dates(self):
+        """
+        Test string dates are converted to datetime objects
+        """
+        event = Event(
+            calendar=self.calendar,
+            title='String Dates',
+            start=str(self.now),
+            end=str(self.tomorrow)
+        )
+        event.save()
+        self.assertIsInstance(event.start, timezone.datetime)
+        self.assertIsInstance(event.end, timezone.datetime)
+
+    def test_duration_calculation(self):
+        """
+        Test duration is calculated from start and end when not set
+        """
+        event = Event(
+            calendar=self.calendar,
+            title='Duration Test',
+            start=self.now,
+            end=self.tomorrow
+        )
+        event.save()
+        self.assertEqual(event.duration, timedelta(days=1))
+
+    def test_duration_not_overwritten(self):
+        """
+        Test that a manually set duration sets the end date appropriately.
+        """
+        custom_duration = timedelta(hours=2)
+        event = Event(
+            calendar=self.calendar,
+            title='Custom Duration',
+            start=self.now,
+            end=self.tomorrow,
+            duration=custom_duration
+        )
+        event.save()
+        self.assertEqual(event.duration, custom_duration)
+
+    # Edge Cases
+    def test_end_before_start(self):
+        """
+        Test end cannot be before start
+        """
+        event = Event(
+            calendar=self.calendar,
+            title='Invalid Times',
+            start=self.tomorrow,
+            end=self.now
+        )
+        with self.assertRaises(ValidationError):
+            event.full_clean()
+
+    def test_rrule_optional(self):
+        """
+        Test rrule can be null/blank
+        """
+        event = Event.objects.create(
+            calendar=self.calendar,
+            title='No RRule',
+            start=self.now,
+            rrule=None
+        )
+        try:
+            event.full_clean()
+        except ValidationError:
+            self.fail("rrule=None should be valid")
+
+    def test_description_optional(self):
+        """
+        Test description can be blank
+        """
+        event = Event.objects.create(
+            calendar=self.calendar,
+            title='No Description',
+            start=self.now,
+            description=''
+        )
+        try:
+            event.full_clean()
+        except ValidationError:
+            self.fail("Empty description should be valid")
+
+    # Type Choices Tests
+    def test_type_default(self):
+        """
+        Test type defaults to event
+        """
+        event = Event.objects.create(
+            calendar=self.calendar,
+            title='Default Type',
+            start=self.now
+        )
+        self.assertEqual(event.type, 'event')
+
+    def test_type_choices_values(self):
+        """
+        Test all type choices are valid
+        """
+        for choice in Event.Types.values:
+            event = Event(
+                calendar=self.calendar,
+                title=f'{choice} Event',
+                start=self.now,
+                type=choice
+            )
+            try:
+                event.full_clean()
+            except ValidationError:
+                self.fail(f"Type '{choice}' should be valid")
