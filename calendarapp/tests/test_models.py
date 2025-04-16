@@ -307,7 +307,6 @@ class EventModelTests(TestCase):
         except ValidationError:
             self.fail("Empty description should be valid")
 
-    # Type Choices Tests
     def test_type_default(self):
         """
         Test type defaults to event
