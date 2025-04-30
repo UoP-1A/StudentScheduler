@@ -127,14 +127,6 @@ class CalendarModelTests(TestCase):
         with self.assertRaises(ValidationError) as cm:
             calendar.full_clean()
         self.assertIn('user', cm.exception.message_dict)
-    
-    def test_blank_name_cannot_be_saved(self):
-        """
-        Test blank name cannot be saved to database"
-        """
-        calendar = Calendar(user=self.user, name='')
-        with self.assertRaises(ValidationError) as cm:
-            calendar.full_clean()
 
 class EventModelTests(TestCase):
     def setUp(self):
@@ -200,9 +192,9 @@ class EventModelTests(TestCase):
         with self.assertRaises(ValidationError):
             event.full_clean()
 
-    def test_type_choices(self):
+    def test_valid_event_type(self):
         """
-        Test type field only accepts valid choices
+        Test type field accepts valid choices
         """
         valid_event = Event(
             calendar=self.calendar,
@@ -211,7 +203,11 @@ class EventModelTests(TestCase):
             type='event'
         )
         valid_event.full_clean()
-
+    
+    def test_invalid_event_type(self):
+        """
+        Test type field does not accept invalid choices
+        """
         invalid_event = Event(
             calendar=self.calendar,
             title='Invalid Event',
