@@ -30,18 +30,15 @@ def upload_calendar(request):
         name = form.cleaned_data["name"]
         ics_file = request.FILES["ics_file"]
 
-        # Return an error if the file is not an ICS filestream
+        # Check file extension and return form with errors if invalid
         if not ics_file.name.endswith(".ics"):
-            form.add_error("ics_file", ValidationError)
+            form.add_error("ics_file", "File must have .ics extension")
+            return render(request, "calendarapp/upload_calendar.html", {"form": form})
 
-        # Create calendar entry without file storage
+        # Create calendar entry
         calendar = Calendar.objects.create(user=request.user, name=name)
-
-        # Process the ICS file without saving the file
         parse_ics(ics_file, calendar)
         return redirect("/")
-    else:
-        form = CalendarUploadForm()
     
     return render(request, "calendarapp/upload_calendar.html", {"form": form})
 
