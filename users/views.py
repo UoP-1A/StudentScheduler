@@ -89,7 +89,7 @@ def respond_request(request, request_id, action):
     friend_request = get_object_or_404(FriendRequest, id=request_id)
     
     if request.user != friend_request.to_user:
-        return redirect('home')  # Or show an error message
+        return redirect('home')
     
     if action == 'accept':
         friend_request.status = 'accepted'
@@ -113,7 +113,7 @@ def friend_requests(request):
 
 @login_required
 def friends_list(request):
-    friends = request.user.friends.all()  # Get all friends of the logged-in user
+    friends = request.user.friends.all()
     return render(request, 'users/friends.html', {'friends': friends})
 
 @login_required
