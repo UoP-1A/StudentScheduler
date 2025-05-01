@@ -14,11 +14,14 @@ StudySync is a collaborative web application designed to transform the way stude
 ==============
 Your Profile
 ==============
-
+.. image:: image.png
+   :width: 1000
+   :alt: Description
 
 ==============
 Core Documentation
 ==============
+
 
 
 ********************
@@ -27,7 +30,16 @@ Advanced Navigation
 
 
 ==============
-Additional Links
+Additional Link
 ==============
 - `GitHub Repository <https://github.com/UoP-1A>`_
 - `Test Plans <https://docs.google.com/spreadsheets/d/16E_DPLyooj764T2RZqr4ZyrxSfrkw6ebbUSg-dzVfso/edit?gid=0#gid=0>`_
+
+
+Page 2 
+======================
+
+Welcome to the StudySync documentation!
+
+.. toctree::
+   :maxdepth: 2
