@@ -14,9 +14,17 @@ StudySync is a collaborative web application designed to transform the way stude
 ==============
 Your Profile
 ==============
-.. image:: image.png
-   :width: 1000
+You will first be introduced with the log in page.
+
+.. image:: sign_in_page.jpg
+   :width: 800
    :alt: Description
+
+Log In Options:
+   * Log into Existing Account
+   * Log in using GitHub
+   * Log in using Google
+
 
 ==============
 Core Documentation
