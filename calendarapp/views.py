@@ -19,12 +19,11 @@ def index(request):
     return render(request, "calendarapp/calendar.html")
 
 @login_required
-@api_view(['POST'])
 def upload_calendar(request):
     """
     This view is called when you upload a calendar through the upload form. It will store the calendar ICS file.
     It then processes this file to its events, and stores them in the database using the Event model.
-    """
+    """ 
     form = CalendarUploadForm(request.POST, request.FILES)
     if form.is_valid():
         name = form.cleaned_data["name"]
