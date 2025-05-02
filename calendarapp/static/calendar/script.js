@@ -1,11 +1,18 @@
+let calendar;
+
 document.addEventListener("DOMContentLoaded", function () {
   const calendarDiv = document.querySelector("#calendar");
   const closeBtn = document.querySelector('.close');
   const modal = document.querySelector("#event-modal");
 
-  const calendar = new FullCalendar.Calendar(calendarDiv, {
+  
+
+  calendar = new FullCalendar.Calendar(calendarDiv, {
     initialView: "timeGridWeek",
-    events: "get-calendar",
+    eventSources: [
+      'get-calendar',
+      '/study_sessions/sessions/',
+    ],
     eventTimeFormat: {
       hour: "2-digit",
       minute: "2-digit",
@@ -60,6 +67,9 @@ document.addEventListener("DOMContentLoaded", function () {
       modal.style.display = 'none';
     }
   }
+
+  addStudySession();
+
 });
 
 function customDayHeaderFormat(date) {
@@ -128,3 +138,15 @@ async function updateEventOnServer(event) {
     event.revert();
   }
 }
+
+function addStudySession() {
+  let SessionEvents = [];
+  let SessionEvent = {
+    title: "Study Session",
+    start: '2025-04-30T17:00:00',
+    end: '2025-04-30T19:00:00',
+  }
+  console.log("Adding event:", SessionEvent);
+  calendar.addEvent(SessionEvent);
+}
+
