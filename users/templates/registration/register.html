@@ -4,7 +4,7 @@
     <div class="login-box">
       <h1 class="login-h1">Register</h1>
         {% if form.errors %}
-        <p>Your username and password didn't match. Please try again.</p>
+        <p>There were errors in your registration. Please try again.</p>
         {% endif %}
 
         {% if next %}
@@ -16,7 +16,7 @@
             {% endif %}
         {% endif %}
 
-        <form method="post" class="login-form">
+        <form method="post" class="register-form">
         {% csrf_token %}
         <table>
             <tr>
@@ -36,12 +36,12 @@
                 <td>{{ form.email }}</td>
             </tr>
             <tr>
-                <td>Password</td>
+                <td>Password:</td>
                 <td>{{ form.password1 }}</td>
                 <td>{{ form.errors.password }}
             </tr>
             <tr>
-                <td>Repeat Password</td>
+                <td>Repeat Password:</td>
                 <td>{{ form.password2 }}</td>
             </tr>
         </table>

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.dateparse import parse_datetime
+from django.core.exceptions import ValidationError
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
@@ -22,21 +23,21 @@ def upload_calendar(request):
     """
     This view is called when you upload a calendar through the upload form. It will store the calendar ICS file.
     It then processes this file to its events, and stores them in the database using the Event model.
-    """
-    if request.method == "POST":
-        form = CalendarUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            name = form.cleaned_data["name"]
-            ics_file = request.FILES["ics_file"]
+    """ 
+    form = CalendarUploadForm(request.POST, request.FILES)
+    if form.is_valid():
+        name = form.cleaned_data["name"]
+        ics_file = request.FILES["ics_file"]
 
-            # Create calendar entry without file storage
-            calendar = Calendar.objects.create(user=request.user, name=name)
+        # Check file extension and return form with errors if invalid
+        if not ics_file.name.endswith(".ics"):
+            form.add_error("ics_file", "File must have .ics extension")
+            return render(request, "calendarapp/upload_calendar.html", {"form": form})
 
-            # Process the ICS file without saving the file
-            parse_ics(ics_file, calendar)
-            return redirect("/")
-    else:
-        form = CalendarUploadForm()
+        # Create calendar entry
+        calendar = Calendar.objects.create(user=request.user, name=name)
+        parse_ics(ics_file, calendar)
+        return redirect("/")
     
     return render(request, "calendarapp/upload_calendar.html", {"form": form})
 
@@ -87,6 +88,7 @@ def prep_events(request):
         event_data = {
             "id": e.id,
             "title": e.title,
+            "type": e.type,
             "start": e.start.isoformat(),
             "end": e.end.isoformat() if e.end else None,
             "description": e.description,

@@ -8,11 +8,14 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import StudySession, RecurringStudySession
 from rest_framework.decorators import api_view
 from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.auth.decorators import login_required
+from .models import StudySession
 
 from .forms import StudySessionForm, RecurringSessionForm
 
 from dateutil.rrule import rrulestr
 
+@login_required
 @csrf_exempt
 def create(request):
     form = StudySessionForm()

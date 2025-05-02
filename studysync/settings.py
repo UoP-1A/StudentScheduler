@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "notifications.apps.NotificationsConfig",
     "study_sessions.apps.StudySessionsConfig",
     "social_django",
+    "modules.apps.ModulesConfig",
 ]
 
 MIDDLEWARE = [
@@ -69,6 +70,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, "users/templates"),
             os.path.join(BASE_DIR, "notifications/templates"),
             os.path.join(BASE_DIR, "study_sessions/templates"),
+            os.path.join(BASE_DIR, "modules/templates"),
         ],
         "APP_DIRS": True,
         "OPTIONS": {
