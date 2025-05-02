@@ -9,7 +9,6 @@ from .models import StudySession, RecurringStudySession
 from rest_framework.decorators import api_view
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth.decorators import login_required
-from .models import StudySession
 
 from .forms import StudySessionForm, RecurringSessionForm
 
@@ -77,13 +76,49 @@ def get_sessions(request):
             recurring_session = RecurringStudySession.objects.filter(session_id=session.id).first()
             if recurring_session:
                 count = recurring_session.recurrence_amount
+                rrule_dt_str = format_datetime(start_datetime)
                 day = session.date.strftime('%A')[:2].upper()
-                new_session["rrule"] = ("FREQ=WEEKLY;BYDAY=" + day + ";COUNT=" + str(count))
+                new_session["rrule"] = ("DTSTART:" + rrule_dt_str + "\n" + "RRULE:FREQ=WEEKLY;BYDAY=" + day + ";COUNT=" + str(count))
+        else:
+            day = session.date.strftime('%A')[:2].upper()
+            rrule_dt_str = format_datetime(start_datetime)
+            new_session["rrule"] = ("DTSTART:" + rrule_dt_str + "\n" + "RRULE:FREQ=WEEKLY;BYDAY=" + day + ";COUNT=1")
         new_session["duration"] = duration
 
         sessions_list.append(new_session)
 
     return JsonResponse(sessions_list, safe=False, encoder=DjangoJSONEncoder)
+
+def format_datetime(start_datetime):
+    year = str(start_datetime.year)
+    month = start_datetime.month
+    day_of_month = start_datetime.day
+    if month < 10:
+        month_string = "0" + str(month)
+    else:
+        month_string = str(month)
+    if day_of_month < 10:
+        day_of_month_as_string = "0" + str(day_of_month)
+    else:
+        day_of_month_as_string = str(day_of_month)
+    
+    hour = start_datetime.hour
+    minute = start_datetime.minute
+    second = start_datetime.second
+    if hour < 10:
+        hour_as_string = "0" + str(hour)
+    else:
+        hour_as_string = str(hour)
+    if minute < 10:
+        minute_as_string = "0" + str(minute)
+    else:
+        minute_as_string = str(minute)
+    if second < 10:
+        second_as_string = "0" + str(second)
+    else:
+        second_as_string = str(second)
+
+    return year + month_string + day_of_month_as_string + "T" + hour_as_string + minute_as_string + second_as_string + "\n"
 
 def get_recurring_sessions(request):
     sessions = RecurringStudySession.objects.all()
