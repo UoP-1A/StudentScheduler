@@ -23,3 +23,10 @@ class RecurringStudySession(models.Model):
 
     def __str__(self):
         return self.user.username + " - " + StudySession.title + " x " + str(self.recurrence_amount)
+    
+#class StudySessionParticipant(models.Model):
+#    study_session = models.ForeignKey(StudySession, on_delete=models.CASCADE, related_name="study_session")
+#    participant = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="study_sessions_participated")
+#
+#    def __str__(self):
+#        return self.participant.username + " - " + self.study_session.title

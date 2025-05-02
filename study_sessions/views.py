@@ -9,6 +9,7 @@ from .models import StudySession, RecurringStudySession
 from rest_framework.decorators import api_view
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 
 from .forms import StudySessionForm, RecurringSessionForm
 
@@ -53,7 +54,9 @@ def create_recurring(request, session_id):
 
 @api_view(['GET'])
 def get_sessions(request):
-    sessions = StudySession.objects.all()
+    user = request.user
+
+    sessions = StudySession.objects.filter(Q(host=user) | Q(participants=user))
     sessions_list = []
     for session in sessions:
         start_datetime = make_aware(datetime.combine(session.date, session.start_time), timezone=ZoneInfo("UTC"))
@@ -64,11 +67,13 @@ def get_sessions(request):
         new_session = {
             'id': session.id,
             'title': session.title,
+            'type': 'study',
             'start': start_datetime.isoformat(),
             'end':  end_datetime.isoformat(),
             'description': session.description,
             #'is_recurring': session.is_recurring,
             #'host_id': session.host_id,
+            #'participants': [participant.id for participant in session.participants.all()],
             #'calendar_id': session.calendar_id_id,
         }
 

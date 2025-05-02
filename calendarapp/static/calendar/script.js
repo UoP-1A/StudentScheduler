@@ -139,14 +139,4 @@ async function updateEventOnServer(event) {
   }
 }
 
-function addStudySession() {
-  let SessionEvents = [];
-  let SessionEvent = {
-    title: "Study Session",
-    start: '2025-04-30T17:00:00',
-    end: '2025-04-30T19:00:00',
-  }
-  console.log("Adding event:", SessionEvent);
-  calendar.addEvent(SessionEvent);
-}
 
