@@ -1,13 +1,14 @@
 from django.test import TestCase, RequestFactory
-from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.exceptions import ValidationError
 from django.urls import reverse
+from django.utils.timezone import now, timedelta
+from django.http import JsonResponse
 
-from calendarapp.models import Calendar
-from calendarapp.forms import CalendarUploadForm
-from calendarapp.views import upload_calendar
+from calendarapp.models import Calendar, Event
+from calendarapp.views import prep_events
+
+import json
 
 CustomUser = get_user_model()
 
@@ -106,3 +107,4 @@ END:VCALENDAR
         
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'form')
+

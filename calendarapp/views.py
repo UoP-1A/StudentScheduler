@@ -4,15 +4,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.dateparse import parse_datetime
-from django.core.exceptions import ValidationError
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
+from util.parse_ics import parse_ics
 
 from rest_framework.decorators import api_view
-from icalendar import Calendar as ICalCalendar
 
-from dateutil.rrule import rrulestr
 
 # Create your views here.
 def index(request):
@@ -41,38 +39,6 @@ def upload_calendar(request):
         return redirect("/")
     
     return render(request, "calendarapp/upload_calendar.html", {"form": form})
-
-def parse_ics(file, user_calendar):
-    """
-    This function opens the uploaded ICS file, iterates through each event,
-    and creates an event object to store in the database.
-    """
-    calendar = ICalCalendar.from_ical(file.read())
-
-    for component in calendar.walk():
-        if component.name == "VEVENT":
-            title = str(component.get("SUMMARY", "Untitled Event"))
-            start = component.get("DTSTART").dt.isoformat()
-            end = component.get("DTEND").dt.isoformat() if component.get("DTEND") else None
-            description = str(component.get("DESCRIPTION", ""))
-
-            # Handle recurring events (rrule)
-            rrule = component.get("RRULE")
-
-            rrule_str = None
-            if rrule:
-                # Convert ical module rrule to fullcalendar readable string
-                rrule_str = rrulestr(rrule.to_ical().decode('utf-8'), dtstart=component.get("DTSTART").dt)
-
-            event = Event(
-                calendar = user_calendar,
-                title = title,
-                start = start,
-                end = end,
-                description = description,
-                rrule = rrule_str
-            )
-            event.save()
 
 @login_required
 @api_view(['GET'])
