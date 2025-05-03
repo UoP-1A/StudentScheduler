@@ -104,6 +104,7 @@ def prep_events(request):
 
     return JsonResponse(event_list, safe=False, encoder=DjangoJSONEncoder)
 
+
 @login_required
 @api_view(['POST'])
 def update_event(request):
