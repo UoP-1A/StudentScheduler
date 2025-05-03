@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import StudySession, RecurringStudySession
+from .models import StudySession, RecurringStudySession, StudySessionParticipant
 from rest_framework.decorators import api_view
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth.decorators import login_required
@@ -26,6 +26,10 @@ def create(request):
             study_session = form.save(commit=False)
             study_session.host = request.user
             study_session.save()
+
+            participants = form.cleaned_data['participants']
+            for participant in participants:
+                StudySessionParticipant.objects.create(study_session=study_session, participant=participant)
 
             if study_session.is_recurring:
                 session_id = study_session.id
@@ -56,7 +60,8 @@ def create_recurring(request, session_id):
 def get_sessions(request):
     user = request.user
 
-    sessions = StudySession.objects.filter(Q(host=user) | Q(participants=user))
+    sessions = StudySession.objects.filter(Q(host=user) | Q(participants_set__participant=user))
+    sessions = sessions.distinct()
     sessions_list = []
     for session in sessions:
         start_datetime = make_aware(datetime.combine(session.date, session.start_time), timezone=ZoneInfo("UTC"))
