@@ -1,11 +1,18 @@
+let calendar;
+
 document.addEventListener("DOMContentLoaded", function () {
   const calendarDiv = document.querySelector("#calendar");
   const closeBtn = document.querySelector('.close');
   const modal = document.querySelector("#event-modal");
 
-  const calendar = new FullCalendar.Calendar(calendarDiv, {
+  
+
+  calendar = new FullCalendar.Calendar(calendarDiv, {
     initialView: "timeGridWeek",
-    events: "get-calendar",
+    eventSources: [
+      'get-calendar',
+      '/study_sessions/sessions/',
+    ],
     eventTimeFormat: {
       hour: "2-digit",
       minute: "2-digit",
@@ -60,6 +67,9 @@ document.addEventListener("DOMContentLoaded", function () {
       modal.style.display = 'none';
     }
   }
+
+  addStudySession();
+
 });
 
 function customDayHeaderFormat(date) {
@@ -80,20 +90,17 @@ function customDayHeaderFormat(date) {
 function showEventDetails(info) {
   const modal = document.querySelector("#event-modal");
   const eventTitle = document.querySelector("#event-title");
-  const eventType = document.querySelector("#event-type");
   const eventStart = document.querySelector("#event-start");
   const eventEnd = document.querySelector("#event-end");
   const eventDescription = document.querySelector("#event-description");
 
   const event = info.event;
-
   const start = event.start ? event.start.toUTCString() : "N/A";
   const end = event.end ? event.end.toUTCString() : "N/A";
   const description = event.extendedProps.description || "N/A";
 
   eventTitle.textContent = event.title;
   eventTitle.setAttribute("title", event.title);
-  eventType.textContent = String(event.extendedProps.type).charAt(0).toUpperCase() + String(event.extendedProps.type).slice(1);
   eventStart.textContent = start;
   eventEnd.textContent = end;
   eventDescription.textContent = description;
@@ -131,3 +138,5 @@ async function updateEventOnServer(event) {
     event.revert();
   }
 }
+
+
