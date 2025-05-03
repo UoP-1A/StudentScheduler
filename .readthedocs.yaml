@@ -9,7 +9,6 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.13"
-    sphinx_rtd_theme: "3.0.2"
 
 python:
   install:
