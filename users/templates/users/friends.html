@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Your Friends</h2>
+  <ul>
+    {% for friend in friends %}
+      <li>
+        <img src="{{ friend.profile_picture.url }}" alt="{{ friend.username }}" width="50" height="50">
+        {{ friend.username }}
+      </li>
+    {% empty %}
+      <p>You have no friends yet.</p>
+    {% endfor %}
+  </ul>
+{% endblock %}

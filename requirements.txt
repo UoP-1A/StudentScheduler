@@ -1,0 +1,10 @@
+django
+psycopg
+python-dotenv
+icalendar
+python-dateutil
+djangorestframework
+pillow
+sphinx
+sphinx_rtd_theme
+social-auth-app-django

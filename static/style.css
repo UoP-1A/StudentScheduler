@@ -1,0 +1,56 @@
+/* Reset default margin and padding, set full height, and choose a clean font */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serifs;
+}
+
+/* Main navigation bar styles */
+#global-navbar {
+  position: sticky;                                                            /* Keeps the navbar fixed at the top while scrolling */
+  background-color: #333;                                                      /* Dark background for contrast */
+  color: #fff;                                                                 /* White text */
+  display: flex;                                                               /* Use Flexbox for layout */
+  align-items: center;                                                         /* Vertically center content */
+  justify-content: space-between;                                              /* Space between left and right sections */
+  padding: 0 20px;                                                             /* Horizontal padding inside navbar */
+  height: 60px;                                                                /* Fixed height */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);                                    /* Subtle shadow for depth */
+}
+
+/* Styles for the site logo or brand name (inside the navbar) */
+#global-navbar > a {
+  font-size: 1.2em;                                                              /* Slightly larger text */
+  font-weight: bold;                                                             /* Bold for emphasis */
+  text-decoration: none;                                                         /* Remove underline */
+  color: #fff;                                                                   /* White color for visibility */
+  float: left;
+}
+
+/* Container inside the navbar (e.g. user info or links) */
+#global-navbar > div {
+  display: flex;                                                                /* Flex to align inner elements */
+  align-items: center;                                                          /* Vertically center them */
+}
+
+/* Navigation buttons container */
+#nav-buttons {
+  display: flex;                                                              /* Layout buttons in a row */
+  align-items: center;
+  gap: 15px;                                                                    /* Space between buttons */
+}
+
+/* Individual navigation links */
+#nav-buttons a {
+  color: #fff;                                                              /* White text */
+  text-decoration: none;                                                    /* No underline */
+  padding: 8px 12px;                                                        /* Inner spacing */
+  transition: background-color 0.3s ease;                                    /* Smooth hover effect */
+  border-radius: 4px;                                                       /* Rounded corners */
+}
+
+/* Hover effect for nav links */
+#nav-buttons a:hover {
+  background-color: rgba(255, 255, 255, 0.2);                               /* Light overlay on hover */
+}
