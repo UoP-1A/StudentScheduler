@@ -146,3 +146,9 @@ def delete_calendar(request, calendar_id):
     messages.success(request, "Calendar deleted successfully.")
 
     return redirect("profile")
+
+def search_results(request):
+    query = request.GET.get('q')
+    results = []
+
+    return render(request, 'search_results.html', {'query': query, 'results': results})
