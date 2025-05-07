@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 from users.models import CustomUser
 
@@ -31,15 +32,28 @@ class Module(models.Model):
 class Grade(models.Model):
     module = models.ForeignKey(Module, related_name="grades", on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    mark = models.FloatField()
-    weight = models.FloatField()
+    mark = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)]
+    )
+    weight = models.FloatField(
+        validators=[MinValueValidator(0.0)]
+    )
+
+    def clean(self):
+        if self.weight < 0:
+            raise ValidationError("Weight cannot be negative.")
+        if self.mark < 0 or self.mark > 100:
+            raise ValidationError("Mark must be between 0 and 100.")
+        
+        total_weight = sum(
+            grade.weight for grade in self.module.grades.exclude(pk=self.pk)
+        ) + self.weight
+
+        if total_weight > 100:
+            raise ValidationError("This exceeds the total allowed weight of 100.")
 
     def save(self, *args, **kwargs):
-        total_weight = sum(grade.weight for grade in self.module.grades.exclude(pk=self.pk)) + self.weight
-
-        if total_weight < 0 or total_weight > 100:
-            raise ValidationError("This exceeds the total allowed weight of 100.")
-    
+        self.full_clean()  # Runs clean() and other validations
         super().save(*args, **kwargs)
 
     def __str__(self):
