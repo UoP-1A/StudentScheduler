@@ -5,3 +5,15 @@
     justify-content: center;
     height: 100vh;
 }
+
+/*
+textarea {
+    width: 100%;
+    height: 50%;
+    resize: none;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}*/
