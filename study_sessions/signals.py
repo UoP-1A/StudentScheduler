@@ -7,6 +7,6 @@ from notifications.models import Notification
 def notify_user_on_study_session_create(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
-            user=instance.created_by,  # Assuming created_by is the user who created the session
-            message=f"Your study session on {instance.topic} was created successfully!"
+            user=instance.host,  # Assuming created_by is the user who created the session
+            message=f"Your study session, {instance.title}, was created successfully!"
         )

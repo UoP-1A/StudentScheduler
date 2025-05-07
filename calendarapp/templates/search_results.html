@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Search Results {% endblock title%}
+{% block content %}
+<h2>Results for "{{ query }}"</h2>
+
+<h3>Events:</h3>
+
+{% if events_results %}
+<ul>
+    {% for event in event_results %}
+    <li>
+        {{ event.title }} | {{ event.calendar.name }} | {{ event.start }}<br>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+    <p>No events found.</p>
+{% endif %}
+
+{% endblock content %}
