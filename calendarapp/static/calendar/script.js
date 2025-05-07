@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
       hour12: true,
     },
     editable: true,
+    eventDisplay: 'block',
     eventDidMount: function (info) {
       info.el.dataset.eventId = info.event.id;
       info.el.dataset.model = info.event.extendedProps.model;
