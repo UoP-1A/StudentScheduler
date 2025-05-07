@@ -4,8 +4,8 @@ from .models import Notification
 
 @login_required
 def notifications_view(request):
-    notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-timestamp')
-    return render(request, 'notifications/notifications.html', {'notifications': notifications})
+    notificationsList = Notification.objects.filter(user=request.user).order_by('-timestamp')
+    return render(request, 'notifications/notifications.html', {'notificationsList': notificationsList})
 
 @login_required
 def mark_as_read(request, notification_id):
