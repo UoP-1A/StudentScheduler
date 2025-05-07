@@ -1,3 +1,4 @@
+===============================
 StudySync documentation!
 ========================
 
@@ -5,7 +6,7 @@ Welcome to StudySync documentation.
 
 StudySync is a collaborative web application designed to transform the way students connect, study, and succeed together. Unlike traditional study groups or generic messaging platforms, StudySync provides a structured, scalable environment tailored specifically for academic collaboration. The platform makes it easy to find or create study groups based on courses, availability, and preferred study methods-removing the friction from group formation and scheduling.
 
-===============================
+
 Login and Accounts
 ===============================
 
@@ -17,15 +18,15 @@ Overview
 This module provides user authentication and account management for StudySync. It uses Django's authentication system, custom forms, and session management to ensure a secure and user-friendly experience. The design emphasizes both ease of use and protection against accidental or unauthorized actions.
 
 Usage
-=====
+-----------
 
 Registration
 ------------
 
 Registration allows new users to create an account on StudySync. The process is designed to be simple while enforcing strong validation on user data. Maintenance involves ensuring that the registration form stays up-to-date with any changes to the user model and that validation rules match security best practices.
 
-.. image:: new_register.jpg
-   :width: 800
+.. image:: new_register.jpeg
+   :width: 500
    :alt: Registration Page
 
 - Users register via the ``/register/`` page.
@@ -55,8 +56,8 @@ Login
 
 Login provides secure access to user accounts. The login system supports both persistent sessions ("remember me") and sessions that expire when the browser closes. Maintenance includes keeping authentication mechanisms secure and updating third-party login options as needed.
 
-.. image:: sign_in_page.jpg
-   :width: 800
+.. image:: new_login.jpeg
+   :width: 500
    :alt: Login Page
 
 Log In Options:
@@ -90,8 +91,8 @@ Profile and Account Deletion
 
 The profile page provides access to user-specific features and settings. Account deletion is intentionally a multi-step process to prevent accidental data loss. Maintenance includes verifying that session flags and navigation flows work as intended after any updates.
 
-.. image:: profile_page.jpg
-   :width: 800
+.. image:: new_profile.jpeg
+   :width: 500
    :alt: Profile Page
 
 - Users can view their profile at ``/profile/``.
@@ -147,7 +148,7 @@ This section provides solutions for common issues users or maintainers might enc
 - If friend requests are not appearing, check for duplicate requests or incorrect user IDs.
 - For login issues, verify that the custom login form inherits from Django's ``AuthenticationForm`` and includes the "remember me" field.
 
-=========
+
 Social
 =========
 
@@ -236,13 +237,9 @@ Friends List
 
 The friends list page shows all confirmed friends for the user. If there are no friends, the page will indicate this. Maintenance includes keeping the friends relationship consistent and updating the UI as needed.
 
-.. image:: friends_list.jpg
-   :width: 500
-   :alt: Friends List (empty)
-
 This is what the friends list page looks like when the user has no friends currently added.
 
-.. image:: firends_list.jpg
+.. image:: firends_page.jpeg
    :width: 200
    :alt: Friends List (with friends)
 
@@ -256,7 +253,7 @@ This is what the friends list page appears like when the user has friends added.
       return render(request, 'users/friends.html', {'friends': friends})
 
 Friend Request Integrity
------------------------
+
 
 Integrity checks prevent duplicate friend requests and ensure that both users' friends lists are updated upon acceptance. Maintenance includes reviewing logic for edge cases and ensuring the database reflects the intended relationships.
 
@@ -284,6 +281,233 @@ The user list page allows users to discover and connect with others who are not 
       received_requests = FriendRequest.objects.filter(to_user=current_user).values_list('from_user', flat=True)
       users = CustomUser.objects.exclude(id=current_user.id).exclude(id__in=friends).exclude(id__in=sent_requests).exclude(id__in=received_requests)
       return render(request, 'users/user_list.html', {'users': users})
+
+
+Module
+================
+
+Overview
+--------
+
+The Module component of StudySync allows users to manage their academic modules and track their grades for each module. This system enforces limits on module and grade creation, calculates weighted averages, and provides robust validation to ensure data integrity. It is designed to help students organize their coursework and monitor their academic progress in a structured way.
+
+Usage
+--------
+
+Module and Grade Models
+-----------------------
+
+Modules represent individual courses or subjects a user is enrolled in, while Grades represent assessments within those modules. Each module belongs to a user and can have multiple grades, each with a mark and a weight.
+
+**Typical usage:**
+- Users can add up to 6 modules.
+- Each module can have multiple grades (e.g., assignments, exams).
+- The system calculates a weighted average for each module based on the grades.
+
+.. code-block:: python
+
+   class Module(models.Model):
+       user = models.ForeignKey(CustomUser, related_name="modules", on_delete=models.CASCADE)
+       name = models.CharField(max_length=50)
+       credits = models.IntegerField(default=0)
+
+       def overall_grade(self):
+           grades = self.grades.all()
+           if not grades:
+               return None
+           total_weight = sum(grade.weight for grade in grades)
+           if total_weight == 0:
+               return None
+           weighted_sum = sum(grade.mark * grade.weight for grade in grades)
+           return round(weighted_sum / total_weight, 2)
+
+       def save(self, *args, **kwargs):
+           if (self.user.modules.count() >= 6 or self.user.modules.count() <= -1) and not self.pk:
+               raise ValidationError("A user can only have between 0 and 6 modules inclusive.")
+           super().save(*args, **kwargs)
+
+       def __str__(self):
+           return f"{self.name}"
+
+   class Grade(models.Model):
+       module = models.ForeignKey(Module, related_name="grades", on_delete=models.CASCADE)
+       name = models.CharField(max_length=100)
+       mark = models.FloatField()
+       weight = models.FloatField()
+
+       def save(self, *args, **kwargs):
+           total_weight = sum(grade.weight for grade in self.module.grades.exclude(pk=self.pk)) + self.weight
+
+           if total_weight < 0 or total_weight > 100:
+               raise ValidationError("This exceeds the total allowed weight of 100.")
+       
+           super().save(*args, **kwargs)
+
+       def __str__(self):
+           return f"Assessment: {self.name} Mark: {self.mark}"
+
+Maintenance
+---------------
+
+The module and grade logic relies on Django’s ORM for data integrity and on custom validation in the `save` methods. To maintain this system:
+- Regularly test the module and grade limits.
+- Ensure that changes to the user or grade models do not break validation logic.
+- Monitor for exceptions raised during module or grade creation, as these indicate user or data errors that should be handled gracefully.
+
+=======================
+Module Management Views
+=======================
+
+Get Modules
+-----------
+
+This view retrieves all modules for the logged-in user and prepares forms for adding new modules or grades. It is the main entry point for users to view and manage their modules.
+
+.. code-block:: python
+
+   @login_required
+   @api_view(['GET'])
+   def get_modules(request):
+       user = request.user
+       modules = user.modules.all()
+       module_form = ModuleCreateForm()
+       grade_form = GradeCreateForm()
+
+       return render(request, "modules/modules.html", {
+           "modules": modules,
+           "module_form": module_form,
+           "grade_form": grade_form,
+       })
+
+**Usage:**  
+Users visit the modules page to see all their modules and add new ones.
+
+**Maintenance:**  
+Keep forms updated if the module or grade fields change. Ensure the template displays validation errors clearly.
+
+Add Module
+----------
+
+Allows users to add a new module, enforcing the maximum module limit. If the user already has 6 modules, an error is shown.
+
+.. code-block:: python
+
+   @login_required
+   @api_view(['POST'])
+   def add_module(request):
+       module_form = ModuleCreateForm(request.POST)
+       if module_form.is_valid():
+           try:
+               Module.objects.create(
+                   user=request.user,
+                   name=module_form.cleaned_data['name'], 
+                   credits=module_form.cleaned_data['credits'],
+               )
+           except ValidationError as e:
+               module_form.add_error(None, e.message)
+               messages.error(request, "Failed to add module: " + str(e))
+               return render(request, 'modules/modules.html', {'module_form': module_form})
+           
+           return redirect("/modules")
+
+**Usage:**  
+Submit the module creation form to add a new course.
+
+**Maintenance:**  
+Validate that the module count logic remains correct if the module model is extended.
+
+Add Grade
+---------
+
+Enables users to add a grade to a module, ensuring that the total weight does not exceed 100. If the limit is exceeded, an error is returned.
+
+.. code-block:: python
+
+   @login_required
+   @api_view(['POST'])
+   def add_grade(request):
+       grade_form = GradeCreateForm(request.POST)
+       if grade_form.is_valid():
+           try:
+               Grade.objects.create(
+                   module=grade_form.cleaned_data['module'],
+                   name=grade_form.cleaned_data['name'],
+                   mark=grade_form.cleaned_data['mark'],
+                   weight=grade_form.cleaned_data['weight'],
+               )
+           except ValidationError as e:
+               grade_form.add_error(None, e.message)
+               messages.error(request, "Failed to add grade: " + str(e))
+               return render(request, 'modules/modules.html', {'grade_form': grade_form})
+           
+           return redirect("/modules")
+
+**Usage:**  
+Add a grade for a specific module, specifying the mark and weight.
+
+**Maintenance:**  
+Ensure the grade form and validation logic are kept in sync with assessment policies.
+
+Delete Module
+-------------
+
+Allows users to remove a module. Associated grades are also deleted due to the `on_delete=models.CASCADE` behavior.
+
+.. code-block:: python
+
+   @login_required
+   @api_view(['POST'])
+   def delete_module(request, module_id):
+       module = get_object_or_404(Module, id=module_id, user=request.user)
+
+       module.delete()
+       messages.success(request, "Module deleted successfully.")
+
+       return redirect("/modules")
+
+**Usage:**  
+Users can delete a module they no longer need.
+
+**Maintenance:**  
+Test that grades are also deleted and that only the module owner can perform this action.
+
+Delete Grade
+------------
+
+Allows users to remove a specific grade from a module.
+
+.. code-block:: python
+
+   @login_required
+   @api_view(['POST'])
+   def delete_grade(request, grade_id):
+       grade = get_object_or_404(Grade, id=grade_id)
+
+       grade.delete()
+       messages.success(request, "Grade deleted successfully.")
+
+       return redirect("/modules")
+
+**Usage:**  
+Delete a grade from a module if it was entered incorrectly or is no longer relevant.
+
+**Maintenance:**  
+Ensure grade deletion does not affect the module’s integrity or overall grade calculation.
+
+Concrete Example
+================
+
+Suppose a user wants to add a new module called "Mathematics" with 20 credits, then add two grades: "Midterm" (mark: 70, weight: 40) and "Final" (mark: 80, weight: 60). The system will calculate the overall grade as:
+
+.. code-block:: python
+
+   # Example Calculation
+   module = Module.objects.create(user=user, name="Mathematics", credits=20)
+   Grade.objects.create(module=module, name="Midterm", mark=70, weight=40)
+   Grade.objects.create(module=module, name="Final", mark=80, weight=60)
+   print(module.overall_grade())  # Output: 76.0
+
+This demonstrates weighted average calculation and validation of grade weights.
 
 ==============
 Additional Links
