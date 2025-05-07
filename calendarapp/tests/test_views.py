@@ -6,8 +6,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 
-from datetime import timedelta
+from django.utils.timezone import make_aware
+from datetime import timedelta, datetime
 
+from calendarapp.views import update_event
 from calendarapp.models import Calendar, Event
 
 CustomUser = get_user_model()
@@ -324,3 +326,184 @@ class PrepEventsViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 404)
         self.assertIn('Calendar not found or access denied', response.json()['message'])
+
+
+class UpdateEventViewTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username='testuser', 
+            password='testpass123',
+            is_active=True
+        )
+        self.other_user = CustomUser.objects.create_user(
+            username='otheruser',
+            password='testpass456',
+            is_active=True
+        )
+        
+        self.calendar = Calendar.objects.create(user=self.user, name='Test Calendar')
+        self.event = Event.objects.create(
+            calendar=self.calendar,
+            title='Test Event',
+            start=make_aware(datetime(2023, 1, 1, 10, 0)),
+            end=make_aware(datetime(2023, 1, 1, 11, 0))
+        )
+        self.url = reverse('update_event')
+        self.client.login(username='testuser', password='testpass123')
+
+    def test_update_event_success(self):
+        """Test successful event update"""
+        data = {
+            'id': self.event.id,
+            'start': '2023-01-02T10:00:00Z',
+            'end': '2023-01-02T11:00:00Z'
+        }
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+            'status': 'success',
+            'event_id': self.event.id
+        })
+        
+        self.event.refresh_from_db()
+        self.assertEqual(
+            self.event.start.isoformat(),
+            '2023-01-02T10:00:00+00:00'
+        )
+        self.assertEqual(
+            self.event.end.isoformat(),
+            '2023-01-02T11:00:00+00:00'  # Matched expected value
+        )
+
+    def test_update_event_end_optional(self):
+        """Test that end time is optional but must be after start when provided"""
+        # First test with no end time (should keep original end time)
+        original_end = self.event.end.isoformat()
+        
+        data = {
+            'id': self.event.id,
+            'start': '2023-01-02T10:00:00Z'  # Only providing start time
+        }
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        self.event.refresh_from_db()
+
+        #If providing end time, it must be after start
+        data_with_valid_end = {
+            'id': self.event.id,
+            'start': '2023-01-02T10:00:00Z',
+            'end': '2023-01-02T11:00:00Z'  # After start time
+        }
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data_with_valid_end),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+
+    def test_update_event_invalid_datetime(self):
+        """Test with invalid datetime format"""
+        data = {
+            'id': self.event.id,
+            'start': 'invalid-datetime'
+        }
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        # Should return 400 Bad Request
+        self.assertEqual(response.status_code, 400)
+        content = response.json()
+        self.assertEqual(content['status'], 'error')
+        self.assertIn('datetime', content['message'].lower())
+
+    def test_update_event_permission_denied(self):
+        """Test updating another user's event"""
+        self.client.logout()
+        self.client.login(username='otheruser', password='testpass456')
+        
+        data = {
+            'id': self.event.id,
+            'start': '2023-01-02T10:00:00Z'
+        }
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        # Remove response.render() as it's not needed for JsonResponse
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {
+            'status': 'error',
+            'message': 'Permission denied'
+        })
+
+    def test_update_event_missing_id(self):
+        """Test missing event ID"""
+        data = {'start': '2023-01-02T10:00:00Z'}
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {
+            'status': 'error',
+            'message': 'Missing required fields'
+        })
+
+    def test_update_event_missing_start(self):
+        """Test missing start time"""
+        data = {'id': self.event.id}
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {
+            'status': 'error',
+            'message': 'Missing required fields'
+        })
+
+    def test_update_event_not_found(self):
+        """Test with non-existent event ID"""
+        data = {
+            'id': 9999,
+            'start': '2023-01-02T10:00:00Z'
+        }
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {
+            'status': 'error',
+            'message': 'Event not found'
+        })

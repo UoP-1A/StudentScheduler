@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.dateparse import parse_datetime
+from django.core.exceptions import ValidationError
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
@@ -129,23 +130,36 @@ def update_event(request):
         return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
 
     try:
-        # Parse datetimes only if strings are provided
+        # Parse datetimes
         new_start = parse_datetime(start_str)
+        if not new_start:
+            return JsonResponse({'status': 'error', 'message': 'Invalid start datetime format'}, status=400)
+
         new_end = parse_datetime(end_str) if end_str else None
 
+        # Get event
         event = Event.objects.get(id=event_id)
         if event.calendar.user != request.user:
             return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
 
+        # Update fields
         event.start = new_start
-        event.end = new_end
-        event.save()
-        return JsonResponse({'status': 'success', 'event_id': event_id})
+        if new_end is not None:
+            event.end = new_end
 
-    except ValueError as e:
-        return JsonResponse({'status': 'error', 'message': f'Invalid datetime format: {str(e)}'}, status=400)
+        # Validate
+        try:
+            event.full_clean()
+        except ValidationError as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+        event.save()
+        return JsonResponse({'status': 'success', 'event_id': event.id})
+
     except Event.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Event not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @login_required
 @api_view(['POST'])

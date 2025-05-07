@@ -68,8 +68,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  addStudySession();
-
 });
 
 function customDayHeaderFormat(date) {

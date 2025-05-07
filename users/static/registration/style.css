@@ -1,5 +1,5 @@
 body {
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Logout form styling (for navbar as it requires POST request) */
