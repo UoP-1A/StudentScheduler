@@ -2,14 +2,17 @@ import json
 
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
-
 from django.utils.timezone import make_aware
-from datetime import timedelta, datetime
 
-from calendarapp.views import update_event
+from datetime import timedelta, datetime
+from rest_framework.test import APIRequestFactory
+
+from calendarapp.views import delete_calendar
 from calendarapp.models import Calendar, Event
 
 CustomUser = get_user_model()
@@ -507,3 +510,84 @@ class UpdateEventViewTests(TestCase):
             'status': 'error',
             'message': 'Event not found'
         })
+
+class DeleteCalendarViewTests(TestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = CustomUser.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.other_user = CustomUser.objects.create_user(
+            username='otheruser',
+            password='testpass456'
+        )
+        self.calendar = Calendar.objects.create(
+            user=self.user,
+            name='Test Calendar'
+        )
+        self.url = reverse('delete_calendar', args=[self.calendar.id])
+
+    def test_delete_calendar_success(self):
+        """Test successful calendar deletion by owner"""
+        request = self.factory.post(self.url)
+        request.user = self.user
+        
+        # Setup messages framework
+        setattr(request, 'session', 'session')
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        
+        response = delete_calendar(request, self.calendar.id)
+        
+        # Check calendar was deleted
+        with self.assertRaises(Calendar.DoesNotExist):
+            Calendar.objects.get(id=self.calendar.id)
+        
+        # Check response redirects to profile
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('profile'))
+        
+        # Check success message
+        messages = list(messages)
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), "Calendar deleted successfully.")
+
+    def test_delete_calendar_not_found(self):
+        """Test deleting non-existent calendar"""
+        request = self.factory.post(self.url)
+        request.user = self.user
+        
+        # Change to test the actual behavior of get_object_or_404
+        response = delete_calendar(request, 9999)  # Non-existent ID
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_calendar_permission_denied(self):
+        """Test deleting another user's calendar"""
+        request = self.factory.post(self.url)
+        request.user = self.other_user  # Different user
+        
+        response = delete_calendar(request, self.calendar.id)
+        
+        # Calendar should still exist
+        calendar = Calendar.objects.get(id=self.calendar.id)
+        self.assertEqual(calendar.name, 'Test Calendar')
+        
+        # Should return 404 since get_object_or_404 checks owner
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_calendar_requires_login(self):
+        """Test anonymous user can't delete calendar"""
+        request = self.factory.post(self.url)
+        request.user = AnonymousUser()
+        
+        response = delete_calendar(request, self.calendar.id)
+        
+        # Should redirect to login page
+        self.assertEqual(response.status_code, 302)
+        login_url = reverse('login')  # Make sure this matches your login URL name
+        self.assertTrue(response.url.startswith(login_url))
+        
+        # Calendar should still exist
+        calendar = Calendar.objects.get(id=self.calendar.id)
+        self.assertEqual(calendar.name, 'Test Calendar')
