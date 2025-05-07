@@ -193,7 +193,7 @@ Responding to Friend Requests
 
 Users can accept or reject incoming friend requests. Accepting a request adds both users to each other's friends lists, while rejecting prevents future interactions. Maintenance includes verifying that only the intended recipient can respond and that both users' lists are updated correctly.
 
-.. image:: friend_requests.jpg
+.. image:: new_friends_request.jpeg
    :width: 500
    :alt: Friend Requests
 
