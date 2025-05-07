@@ -76,6 +76,7 @@ def get_sessions(request):
             'start': start_datetime.isoformat(),
             'end':  end_datetime.isoformat(),
             'description': session.description,
+            "model": "StudySession",
             #'is_recurring': session.is_recurring,
             #'host_id': session.host_id,
             #'participants': [participant.id for participant in session.participants.all()],

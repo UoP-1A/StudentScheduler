@@ -8,6 +8,8 @@ from django.core.exceptions import ValidationError
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
+from study_sessions.models import StudySession
+
 from util.parse_ics import parse_ics
 
 from rest_framework.decorators import api_view
@@ -56,6 +58,7 @@ def prep_events(request):
                 "start": e.start.isoformat(),
                 "end": e.end.isoformat() if e.end else None,
                 "description": e.description,
+                "model": "Event",
             }
             if e.rrule:
                 event_data["rrule"] = e.rrule
@@ -124,9 +127,10 @@ def update_event(request):
     event_id = request.data.get('id')
     start_str = request.data.get('start')
     end_str = request.data.get('end')
-
+    model_type = request.data.get('model')
+    
     # Validate required fields
-    if not event_id or not start_str:
+    if not event_id or not start_str or not model_type:
         return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
 
     try:
@@ -137,26 +141,56 @@ def update_event(request):
 
         new_end = parse_datetime(end_str) if end_str else None
 
-        # Get event
-        event = Event.objects.get(id=event_id)
-        if event.calendar.user != request.user:
-            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+        if model_type.lower() == 'event':
+            # Handle Event model
+            event = Event.objects.get(id=event_id)
+            if event.calendar.user != request.user:
+                return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
 
-        # Update fields
-        event.start = new_start
-        if new_end is not None:
-            event.end = new_end
+            # Update fields
+            event.start = new_start
+            if new_end is not None:
+                event.end = new_end
 
-        # Validate
-        try:
-            event.full_clean()
-        except ValidationError as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+            # Validate
+            try:
+                event.full_clean()
+            except ValidationError as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-        event.save()
-        return JsonResponse({'status': 'success', 'event_id': event.id})
+            event.save()
+            
+        elif model_type.lower() == 'studysession':
+            # Handle StudySession model
+            study_session = StudySession.objects.get(id=event_id)
+            if study_session.host != request.user:
+                return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
 
-    except Event.DoesNotExist:
+            # Update fields
+            study_session.start_time = new_start
+            if new_end is not None:
+                study_session.end_time = new_end
+
+            # Validate
+            try:
+                study_session.full_clean()
+            except ValidationError as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+            study_session.save()
+            
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid model type'}, status=400)
+
+        return JsonResponse({
+            'status': 'success',
+            'event_id': event_id,
+            'new_start_time': new_start,
+            'new_finish_time': new_end,
+            'model': model_type
+        })
+
+    except (Event.DoesNotExist, StudySession.DoesNotExist):
         return JsonResponse({'status': 'error', 'message': 'Event not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
