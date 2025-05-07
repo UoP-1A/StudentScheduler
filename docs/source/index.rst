@@ -24,7 +24,7 @@ Registration
 
 Registration allows new users to create an account on StudySync. The process is designed to be simple while enforcing strong validation on user data. Maintenance involves ensuring that the registration form stays up-to-date with any changes to the user model and that validation rules match security best practices.
 
-.. image:: register_page.jpg
+.. image:: new_register.jpg
    :width: 800
    :alt: Registration Page
 
