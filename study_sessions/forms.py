@@ -4,10 +4,16 @@ from users.models import CustomUser
 from calendarapp.models import Calendar
 
 class StudySessionForm(forms.ModelForm):
+    participants = forms.ModelMultipleChoiceField(
+        queryset=CustomUser.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Participants"
+    )
 
     class Meta:
         model = StudySession
-        fields = ['participants', 'title', 'description', 'start_time', 'end_time', 'date', 'is_recurring', 'calendar_id']
+        fields = ['participants','title', 'description', 'start_time', 'end_time', 'date', 'is_recurring', 'calendar_id']
         exclude = ['host']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
