@@ -193,7 +193,7 @@ Responding to Friend Requests
 
 Users can accept or reject incoming friend requests. Accepting a request adds both users to each other's friends lists, while rejecting prevents future interactions. Maintenance includes verifying that only the intended recipient can respond and that both users' lists are updated correctly.
 
-.. image:: friend_requests.jpg
+.. image:: new_friends_request.jpeg
    :width: 500
    :alt: Friend Requests
 
@@ -239,7 +239,7 @@ The friends list page shows all confirmed friends for the user. If there are no 
 
 This is what the friends list page looks like when the user has no friends currently added.
 
-.. image:: firends_page.jpeg
+.. image:: friends_page.jpeg
    :width: 200
    :alt: Friends List (with friends)
 
@@ -298,6 +298,10 @@ Module and Grade Models
 -----------------------
 
 Modules represent individual courses or subjects a user is enrolled in, while Grades represent assessments within those modules. Each module belongs to a user and can have multiple grades, each with a mark and a weight.
+
+.. image:: modules_page.jpg
+   :width: 200
+   :alt: discription
 
 **Typical usage:**
 - Users can add up to 6 modules.
@@ -361,6 +365,10 @@ Module Management Views
 Get Modules
 -----------
 
+.. image:: module_with_module.jpg
+   :width: 800
+   :alt: Friend Requests
+
 This view retrieves all modules for the logged-in user and prepares forms for adding new modules or grades. It is the main entry point for users to view and manage their modules.
 
 .. code-block:: python
@@ -420,6 +428,10 @@ Add Grade
 ---------
 
 Enables users to add a grade to a module, ensuring that the total weight does not exceed 100. If the limit is exceeded, an error is returned.
+
+.. image:: module_with_grade.jpg
+   :width: 500
+   :alt: Friend Requests
 
 .. code-block:: python
 
@@ -495,7 +507,7 @@ Delete a grade from a module if it was entered incorrectly or is no longer relev
 Ensure grade deletion does not affect the module’s integrity or overall grade calculation.
 
 Concrete Example
-================
+---------------
 
 Suppose a user wants to add a new module called "Mathematics" with 20 credits, then add two grades: "Midterm" (mark: 70, weight: 40) and "Final" (mark: 80, weight: 60). The system will calculate the overall grade as:
 
@@ -509,7 +521,84 @@ Suppose a user wants to add a new module called "Mathematics" with 20 credits, t
 
 This demonstrates weighted average calculation and validation of grade weights.
 
-==============
+
+Calendar
+================
+
+Overview
+--------
+
+The Calendar feature in StudySync is designed to help users efficiently organize their academic schedules, manage important deadlines, and coordinate study sessions with peers. Its intuitive interface makes it easy for students to stay on top of their coursework and collaborate with others.
+
+.. image:: calendar_display.jpg
+   :width: 500
+   :alt: Friend Requests
+
+Usage
+-----------
+
+The Calendar allows users to:
+
+- **Create, view, and edit study sessions and academic events** directly from their dashboard.
+- **Link events to specific modules or courses** for better organization.
+- **Invite friends or study group members** to shared events, making collaborative planning seamless.
+- **Receive reminders and notifications** for upcoming sessions, helping users stay on track.
+
+**How to Use:**
+
+1. **Access the Calendar** from your dashboard or the main navigation menu.
+2. **Add a new event** by selecting a date and filling in details such as the module, event title, time, and invitees.
+3. **Edit or delete events** as your schedule changes.
+4. **View all your upcoming events** in a daily, weekly, or monthly format.
+
+This integration with modules and social features ensures that academic planning is both comprehensive and user-friendly.
+
+Maintenance
+-----------
+
+Maintaining the Calendar involves:
+
+- **Ensuring event data is synchronized** across all user devices and among group members.
+- **Managing time zones** so events display correctly for all participants.
+- **Delivering notifications and reminders** reliably and on time.
+- **Updating the interface and features** based on user feedback and academic calendar changes.
+
+Regular testing and updates are performed to ensure the Calendar remains accurate, user-friendly, and responsive to the needs of the StudySync community.
+
+Concrete Examples
+------------
+
+**Example 1: Scheduling a Study Session**
+
+A user wants to organize a group study session for their "Calculus" module:
+
+.. code-block:: python
+
+   # Creating a study session event
+   event = StudySession.objects.create(
+       user=request.user,
+       module=module_instance,
+       title="Group Study for Calculus",
+       start_time=datetime(2025, 5, 10, 15, 0),
+       end_time=datetime(2025, 5, 10, 17, 0),
+       description="Review chapters 3 and 4",
+   )
+   event.invite_friends(friend_list)
+
+**Example 2: Receiving Reminders**
+
+- The user and invited friends receive notifications before the session starts, ensuring everyone is prepared and on time.
+
+Troubleshooting Tips
+------------------
+
+- **Events not appearing?** Refresh the page or check your internet connection.
+- **Time zone issues?** Confirm your account settings reflect your current location.
+- **Missing notifications?** Ensure notifications are enabled in your account preferences and device settings.
+- **Unable to edit or delete an event?** Verify that you are the event creator or have the necessary permissions.
+
+If issues persist, contact StudySync support or check the FAQ for further assistance.
+
 Additional Links
 ==============
 
