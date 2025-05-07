@@ -11,20 +11,37 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 
-from .forms import StudySessionForm, RecurringSessionForm
+from .forms import AutoStudySessionForm, ManualStudySessionForm, RecurringSessionForm
 
 from dateutil.rrule import rrulestr
 
 @login_required
 @csrf_exempt
-def create(request):
-    form = StudySessionForm()
+def method_of_creation(request):
+    automated = 0
+    return render(request, 'study_sessions/methods.html')
+
+@login_required
+@csrf_exempt
+def create(request, automated=0):
+    if automated == 0:
+        form = ManualStudySessionForm
+    else:
+        form = AutoStudySessionForm
     if request.method == 'POST':
         print(request.POST)
-        form = StudySessionForm(request.POST)
+        if automated == 0:
+            form = ManualStudySessionForm(request.POST)
+        else:
+            form = AutoStudySessionForm(request.POST)
         if form.is_valid():
             study_session = form.save(commit=False)
             study_session.host = request.user
+            if automated == 1:
+                autoDate = automateSession()
+                study_session.date = autoDate.date()
+                study_session.start_time = autoDate.strftime("%H:%M:%S")
+                study_session.end_time = (autoDate + timedelta(hours=1)).strftime("%H:%M:%S")
             study_session.save()
 
             participants = form.cleaned_data['participants']
@@ -140,3 +157,7 @@ def get_recurring_sessions(request):
             'session_id': session.session_id.id,
         })
     return JsonResponse(sessions_list, safe=False)
+
+
+def automateSession():
+    return datetime.now()

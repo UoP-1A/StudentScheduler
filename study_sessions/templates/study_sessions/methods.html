@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+  <link href="{% static 'study_sessions/style.css' %}" rel="stylesheet">
+  <script src="{% static 'study_sessions/script.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Do you want to create your study session manually or automatically?</h1>
+        <a href="{% url 'study_sessions:create' automated=0 %}">Manually</a>
+        <a href="{% url 'study_sessions:create' automated=1 %}">Automatically?</a>
+    </div>
+{% endblock %}
