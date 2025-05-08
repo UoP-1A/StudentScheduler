@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_GET
 from django.core.exceptions import ValidationError
 
 from rest_framework.decorators import api_view
@@ -11,18 +11,14 @@ from .models import Module, Grade
 
 # Create your views here.
 
+@require_GET
 @login_required
-@api_view(['GET'])
 def get_modules(request):
-    user = request.user
-    modules = user.modules.all()
-    module_form = ModuleCreateForm()
-    grade_form = GradeCreateForm()
-
+    modules = request.user.modules.all().order_by('name')
     return render(request, "modules/modules.html", {
         "modules": modules,
-        "module_form": module_form,
-        "grade_form": grade_form,
+        "module_form": ModuleCreateForm(),
+        "grade_form": GradeCreateForm(),
     })
 
 @login_required

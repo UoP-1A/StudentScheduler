@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
-from ..models import Notification
+from notifications.models import Notification
 
 CustomUser = get_user_model()
 
