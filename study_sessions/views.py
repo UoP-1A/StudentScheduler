@@ -1,9 +1,8 @@
 from zoneinfo import ZoneInfo
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.utils.timezone import make_aware
 from django.shortcuts import render, redirect
-from django.views import View
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from .models import StudySession, RecurringStudySession, StudySessionParticipant
 from rest_framework.decorators import api_view
@@ -11,39 +10,48 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 
-from .forms import StudySessionForm, RecurringSessionForm
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied
 
-from dateutil.rrule import rrulestr
+from util.format_datetime import format_datetime
+from .forms import StudySessionForm, RecurringSessionForm
 
 @login_required
 @csrf_exempt
 def create(request):
-    form = StudySessionForm()
-    if request.method == 'POST':
-        print(request.POST)
-        form = StudySessionForm(request.POST)
-        if form.is_valid():
-            study_session = form.save(commit=False)
-            study_session.host = request.user
-            study_session.save()
+    form = StudySessionForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        study_session = form.save(commit=False)
+        study_session.host = request.user
+        study_session.save()
+        
+        # Explicitly save participants if needed
+        participants = form.cleaned_data.get('participants', [])
+        for participant in participants:
+            StudySessionParticipant.objects.get_or_create(
+                study_session=study_session,
+                participant=participant
+            )
+        
+        if study_session.is_recurring:
+            return redirect('create_recurring', session_id=study_session.id)
+        return redirect('./')
+    
+    return render(request, 'study_sessions/create.html', {'form': form})
 
-            participants = form.cleaned_data['participants']
-            for participant in participants:
-                StudySessionParticipant.objects.create(study_session=study_session, participant=participant)
-
-            if study_session.is_recurring:
-                session_id = study_session.id
-                return redirect('study_sessions:create_recurring', session_id)
-            else:
-                return redirect('./')
-    context = {
-        'form': form
-    }
-    return render(request, 'study_sessions/create.html', context)
-
+@login_required
 def create_recurring(request, session_id):
-    session = StudySession.objects.get(id=session_id)
-    form = RecurringSessionForm()
+    # Get session or return 404
+    session = get_object_or_404(StudySession, id=session_id)
+    
+    # Verify permissions
+    if session.host != request.user:
+        raise PermissionDenied
+        
+    # Verify session is marked as recurring
+    if not session.is_recurring:
+        return HttpResponseBadRequest("Session must be marked as recurring")
+
     if request.method == 'POST':
         form = RecurringSessionForm(request.POST)
         if form.is_valid():
@@ -51,11 +59,15 @@ def create_recurring(request, session_id):
             recurring_session.session_id = session
             recurring_session.save()
             return redirect('index')
-    context = {
-        'form': form
-    }
-    return render(request, 'study_sessions/create_recurring.html', context)
+    else:
+        form = RecurringSessionForm()
 
+    return render(request, 'study_sessions/create_recurring.html', {
+        'form': form,
+        'session': session
+    })
+
+@login_required
 @api_view(['GET'])
 def get_sessions(request):
     user = request.user
@@ -100,37 +112,7 @@ def get_sessions(request):
 
     return JsonResponse(sessions_list, safe=False, encoder=DjangoJSONEncoder)
 
-def format_datetime(start_datetime):
-    year = str(start_datetime.year)
-    month = start_datetime.month
-    day_of_month = start_datetime.day
-    if month < 10:
-        month_string = "0" + str(month)
-    else:
-        month_string = str(month)
-    if day_of_month < 10:
-        day_of_month_as_string = "0" + str(day_of_month)
-    else:
-        day_of_month_as_string = str(day_of_month)
-    
-    hour = start_datetime.hour
-    minute = start_datetime.minute
-    second = start_datetime.second
-    if hour < 10:
-        hour_as_string = "0" + str(hour)
-    else:
-        hour_as_string = str(hour)
-    if minute < 10:
-        minute_as_string = "0" + str(minute)
-    else:
-        minute_as_string = str(minute)
-    if second < 10:
-        second_as_string = "0" + str(second)
-    else:
-        second_as_string = str(second)
-
-    return year + month_string + day_of_month_as_string + "T" + hour_as_string + minute_as_string + second_as_string + "\n"
-
+@login_required
 def get_recurring_sessions(request):
     sessions = RecurringStudySession.objects.all()
     sessions_list = []

@@ -6,7 +6,7 @@ from .models import Notification
 
 @login_required
 def notifications_view(request):
-    notificationsList = Notification.objects.filter(user=request.user).order_by('-timestamp')
+    notificationsList = Notification.objects.filter(user=request.user).order_by('timestamp')
     return render(request, 'notifications/notifications.html', {'notificationsList': notificationsList})
 
 @require_POST

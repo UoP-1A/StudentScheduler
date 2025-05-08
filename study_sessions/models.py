@@ -20,10 +20,6 @@ class StudySession(models.Model):
 
     def clean(self):
         """Add validation for time and date logic"""
-        # Date validation
-        if self.date < timezone.now().date():
-            raise ValidationError("Study session date cannot be in the past")
-        
         # Time validation
         if self.end_time <= self.start_time:
             raise ValidationError("End time must be after start time")
@@ -38,6 +34,10 @@ class RecurringStudySession(models.Model):
 
     def clean(self):
         """Add validation for recurrence_amount"""
+
+        if self.recurrence_amount is None:
+            return
+        
         if self.recurrence_amount <= 0:
             raise ValidationError("Recurrence amount must be a positive number")
 

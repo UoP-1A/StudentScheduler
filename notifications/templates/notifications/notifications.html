@@ -19,7 +19,10 @@
                     <small class="text-muted">{{ notification.timestamp }}</small>
                 </div>
                 {% if not notification.is_read %}
-                    <a href="{% url 'mark_as_read' notification.id %}" class="btn btn-sm btn-outline-primary ms-3">Mark as Read</a>
+                <form action="{% url 'mark_as_read' notification.id %}" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary ms-3">Mark as Read</button>
+                </form>
                 {% endif %}
             </li>
         {% empty %}

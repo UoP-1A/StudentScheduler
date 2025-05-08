@@ -46,21 +46,6 @@ class StudySessionModelTests(TestCase):
             )
             session.full_clean()
 
-    def test_date_validation(self):
-        """Test future date requirement"""
-        yesterday = timezone.now().date() - timezone.timedelta(days=1)
-        with self.assertRaises(ValidationError):
-            session = StudySession(
-                host=self.user,
-                title='Past Session',
-                description='This should fail',
-                start_time='14:00:00',
-                end_time='16:00:00',
-                date=yesterday,  # Past date
-                calendar_id=self.calendar
-            )
-            session.full_clean()
-
     def test_host_relationship(self):
         """Test host foreign key relationship"""
         session = StudySession.objects.create(

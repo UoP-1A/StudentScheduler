@@ -22,10 +22,39 @@ class StudySessionForm(forms.ModelForm):
         }
 
 class RecurringSessionForm(forms.ModelForm):
+    recurrence_amount = forms.IntegerField(
+        min_value=1,
+        required=True,
+        widget=forms.NumberInput(attrs={
+            'min': '1',
+            'class': 'form-control'
+        }),
+        error_messages={
+            'min_value': 'Recurrence amount must be at least 1',
+            'required': 'Recurrence amount is required',
+            'invalid': 'Please enter a valid number'
+        }
+    )
 
     class Meta:
         model = RecurringStudySession
         fields = ['recurrence_amount']
-        widgets = {
-            'recurrence_amount': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
+
+    def clean_recurrence_amount(self):
+        amount = self.cleaned_data.get('recurrence_amount')
+        
+        # Explicit None check
+        if amount is None:
+            raise forms.ValidationError("Recurrence amount is required")
+            
+        # Convert to int if it's a string
+        try:
+            amount = int(amount)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Please enter a valid number")
+            
+        # Validate minimum value
+        if amount < 1:
+            raise forms.ValidationError("Recurrence amount must be at least 1")
+            
+        return amount

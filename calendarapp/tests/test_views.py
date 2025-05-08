@@ -7,10 +7,9 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.timezone import make_aware, is_aware
+from django.utils.timezone import make_aware
 
 from datetime import timedelta, datetime
-from dateutil.parser import parse
 from rest_framework.test import APIRequestFactory
 
 from calendarapp.views import delete_calendar

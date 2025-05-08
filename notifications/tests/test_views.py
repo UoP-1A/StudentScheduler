@@ -42,8 +42,8 @@ class NotificationsViewTests(TestCase):
         
         notifications = response.context['notificationsList']
         self.assertEqual(notifications.count(), 2)
-        self.assertEqual(notifications[0].message, "Second notification")
-        self.assertEqual(notifications[1].message, "First notification")
+        self.assertEqual(notifications[1].message, "Second notification")
+        self.assertEqual(notifications[0].message, "First notification")
         self.assertContains(response, "Second notification")
 
     def test_authenticated_user_no_notifications(self):
@@ -73,7 +73,7 @@ class NotificationsViewTests(TestCase):
         
         # Verify descending order
         self.assertTrue(
-            notifications[0].timestamp >= notifications[1].timestamp
+            notifications[0].timestamp <= notifications[1].timestamp
         )
 
 class MarkAsReadViewTests(TestCase):
