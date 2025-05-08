@@ -67,6 +67,15 @@ Log In Options:
 
 - Users log in via a custom login page (``CustomLoginView``) with optional "remember me" functionality.
 
+Logout
+----------------
+
+This allows the user to log out of the app if they decide to no longer use the app.
+
+.. image:: log_out_page.jpeg
+   :width: 500
+   :alt: log out page
+
 Remember Me Functionality
 -------------------------
 
@@ -166,10 +175,6 @@ Sending a Friend Request
 ------------------------
 
 Sending a friend request is straightforward and can be done by username or email. The backend checks for existing requests to prevent duplicates. Maintenance includes ensuring efficient database queries and handling exceptions gracefully.
-
-.. image:: pending_friend_requests.jpg
-   :width: 200
-   :alt: Pending Friend Requests
 
 - Users can add friends directly using their username or via email.
 
