@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 
 from PIL import Image
 
@@ -43,6 +44,11 @@ class FriendRequest(models.Model):
 
     class Meta:
         unique_together = ('from_user', 'to_user')
+
+    def clean(self):
+        if self.from_user == self.to_user:
+            raise ValidationError("Users cannot send friend requests to themselves.")
+        super().clean()
 
     def __str__(self):
         return f"{self.from_user} -> {self.to_user} ({self.status})"
