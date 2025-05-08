@@ -10,7 +10,7 @@ class CustomUser(AbstractUser):
     friends = models.ManyToManyField("self", blank=True)
 
     def save(self, *args, **kwargs):
-        super().save()
+        super().save(*args, **kwargs)
 
         img = Image.open(self.profile_picture.path)
 
