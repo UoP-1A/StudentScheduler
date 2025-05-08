@@ -10,7 +10,6 @@ CustomUser = get_user_model()
 
 class GetModulesViewTests(TestCase):
     def setUp(self):
-        self.factory = RequestFactory()
         self.user = CustomUser.objects.create_user(
             username='testuser',
             password='testpass123'
@@ -25,7 +24,7 @@ class GetModulesViewTests(TestCase):
             name='Physics',
             credits=10
         )
-        self.url = reverse('add-module')
+        self.url = reverse('modules')
 
     def test_authenticated_user_with_modules(self):
         """Test view for authenticated user with modules"""
@@ -55,32 +54,22 @@ class GetModulesViewTests(TestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['modules']), 0)
-        self.assertContains(response, 'No modules available.')
-
-    def test_unauthenticated_user(self):
-        """Test view redirects for unauthenticated users"""
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(
-            response,
-            f'/accounts/login/?next={self.url}'
-        )
+        self.assertContains(response, 'No modules available')
 
     def test_context_data(self):
         """Test all required context data is present"""
         self.client.force_login(self.user)
         response = self.client.get(self.url)
         
+        self.assertEqual(response.status_code, 200)
         self.assertIn('modules', response.context)
         self.assertIn('module_form', response.context)
         self.assertIn('grade_form', response.context)
 
     def test_module_queryset(self):
         """Test only requesting user's modules"""
-        # Create another user with different modules
         other_user = CustomUser.objects.create_user(
             username='otheruser',
-            email='other@example.com',
             password='testpass123'
         )
         Module.objects.create(
@@ -95,6 +84,15 @@ class GetModulesViewTests(TestCase):
         modules = list(response.context['modules'])
         self.assertEqual(len(modules), 2)
         self.assertNotIn('Other Module', [m.name for m in modules])
+
+    def test_unauthenticated_user(self):
+        """Test view redirects for unauthenticated users"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            f'/accounts/login/?next={self.url}'
+        )
 
 class AddModuleViewTests(TestCase):
     def setUp(self):

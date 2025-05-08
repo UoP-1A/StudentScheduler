@@ -6,7 +6,6 @@ from modules.models import Module, Grade
 
 CustomUser = get_user_model()
 
-
 class ModuleModelTests(TestCase):
     def setUp(self):
         # Create a test user

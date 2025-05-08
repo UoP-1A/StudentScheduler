@@ -7,9 +7,10 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, is_aware
 
 from datetime import timedelta, datetime
+from dateutil.parser import parse
 from rest_framework.test import APIRequestFactory
 
 from calendarapp.views import delete_calendar
@@ -336,12 +337,10 @@ class UpdateEventViewTests(TestCase):
         self.user = CustomUser.objects.create_user(
             username='testuser', 
             password='testpass123',
-            is_active=True
         )
         self.other_user = CustomUser.objects.create_user(
             username='otheruser',
             password='testpass456',
-            is_active=True
         )
         
         self.calendar = Calendar.objects.create(user=self.user, name='Test Calendar')
@@ -359,7 +358,8 @@ class UpdateEventViewTests(TestCase):
         data = {
             'id': self.event.id,
             'start': '2023-01-02T10:00:00Z',
-            'end': '2023-01-02T11:00:00Z'
+            'end': '2023-01-02T11:00:00Z',
+            'model': 'event'
         }
         
         response = self.client.post(
@@ -369,10 +369,9 @@ class UpdateEventViewTests(TestCase):
         )
         
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {
-            'status': 'success',
-            'event_id': self.event.id
-        })
+        response_data = response.json()
+        self.assertEqual(response_data['status'], 'success')
+        self.assertEqual(response_data['event_id'], self.event.id)
         
         self.event.refresh_from_db()
         self.assertEqual(
@@ -381,48 +380,51 @@ class UpdateEventViewTests(TestCase):
         )
         self.assertEqual(
             self.event.end.isoformat(),
-            '2023-01-02T11:00:00+00:00'  # Matched expected value
+            '2023-01-02T11:00:00+00:00'
         )
 
     def test_update_event_end_optional(self):
-        """Test that end time is optional but must be after start when provided"""
-        # First test with no end time (should keep original end time)
-        original_end = self.event.end.isoformat()
-        
-        data = {
-            'id': self.event.id,
-            'start': '2023-01-02T10:00:00Z'  # Only providing start time
-        }
-        
-        response = self.client.post(
-            self.url,
-            data=json.dumps(data),
-            content_type='application/json'
+        """Test that duration is maintained when updating start time"""
+        # Create event with explicit 2-hour duration
+        event = Event.objects.create(
+            calendar=self.calendar,
+            title='Test Event',
+            start=make_aware(datetime(2023, 1, 1, 10, 0)),
+            end=make_aware(datetime(2023, 1, 1, 12, 0)),  # 2 hour duration
+            duration=timedelta(hours=2),
         )
         
-        self.assertEqual(response.status_code, 400)
-        self.event.refresh_from_db()
+        # Verify initial setup
+        self.assertEqual(event.duration, timedelta(hours=2))
 
-        #If providing end time, it must be after start
-        data_with_valid_end = {
-            'id': self.event.id,
-            'start': '2023-01-02T10:00:00Z',
-            'end': '2023-01-02T11:00:00Z'  # After start time
-        }
-        
+        # Update just the start time
         response = self.client.post(
             self.url,
-            data=json.dumps(data_with_valid_end),
+            data=json.dumps({
+                'id': event.id,
+                'start': '2023-01-02T10:00:00Z',
+                'model': 'event'
+            }),
             content_type='application/json'
         )
         
         self.assertEqual(response.status_code, 200)
+        event.refresh_from_db()
+        
+        # Verify duration was maintained
+        self.assertEqual(event.duration, timedelta(hours=2))
+        self.assertIsNotNone(event.end, "End time should not be None")
+        self.assertEqual(
+            event.end.isoformat(),
+            '2023-01-02T12:00:00+00:00'  # 10:00 + 2 hours
+        )
 
     def test_update_event_invalid_datetime(self):
         """Test with invalid datetime format"""
         data = {
             'id': self.event.id,
-            'start': 'invalid-datetime'
+            'start': 'invalid-datetime',
+            'model': 'event'
         }
         
         response = self.client.post(
@@ -431,7 +433,6 @@ class UpdateEventViewTests(TestCase):
             content_type='application/json'
         )
         
-        # Should return 400 Bad Request
         self.assertEqual(response.status_code, 400)
         content = response.json()
         self.assertEqual(content['status'], 'error')
@@ -444,7 +445,8 @@ class UpdateEventViewTests(TestCase):
         
         data = {
             'id': self.event.id,
-            'start': '2023-01-02T10:00:00Z'
+            'start': '2023-01-02T10:00:00Z',
+            'model': 'event'
         }
         
         response = self.client.post(
@@ -453,7 +455,6 @@ class UpdateEventViewTests(TestCase):
             content_type='application/json'
         )
         
-        # Remove response.render() as it's not needed for JsonResponse
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.json(), {
             'status': 'error',
@@ -462,7 +463,10 @@ class UpdateEventViewTests(TestCase):
 
     def test_update_event_missing_id(self):
         """Test missing event ID"""
-        data = {'start': '2023-01-02T10:00:00Z'}
+        data = {
+            'start': '2023-01-02T10:00:00Z',
+            'model': 'event'
+        }
         
         response = self.client.post(
             self.url,
@@ -478,7 +482,10 @@ class UpdateEventViewTests(TestCase):
 
     def test_update_event_missing_start(self):
         """Test missing start time"""
-        data = {'id': self.event.id}
+        data = {
+            'id': self.event.id,
+            'model': 'event'
+        }
         
         response = self.client.post(
             self.url,
@@ -496,7 +503,8 @@ class UpdateEventViewTests(TestCase):
         """Test with non-existent event ID"""
         data = {
             'id': 9999,
-            'start': '2023-01-02T10:00:00Z'
+            'start': '2023-01-02T10:00:00Z',
+            'model': 'event'
         }
         
         response = self.client.post(
@@ -509,6 +517,25 @@ class UpdateEventViewTests(TestCase):
         self.assertEqual(response.json(), {
             'status': 'error',
             'message': 'Event not found'
+        })
+
+    def test_update_event_missing_model(self):
+        """Test missing model type"""
+        data = {
+            'id': self.event.id,
+            'start': '2023-01-02T10:00:00Z'
+        }
+        
+        response = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {
+            'status': 'error',
+            'message': 'Missing required fields'
         })
 
 class DeleteCalendarViewTests(TestCase):

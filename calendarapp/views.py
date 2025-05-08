@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -8,11 +10,14 @@ from django.core.exceptions import ValidationError
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
+
 from study_sessions.models import StudySession
 
 from util.parse_ics import parse_ics
 
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 
 # Create your views here.
@@ -121,8 +126,8 @@ def prep_events(request):
             )
 
 
-@login_required
 @api_view(['POST'])
+@login_required
 def update_event(request):
     event_id = request.data.get('id')
     start_str = request.data.get('start')
@@ -131,69 +136,105 @@ def update_event(request):
     
     # Validate required fields
     if not event_id or not start_str or not model_type:
-        return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+        return Response(
+            {'status': 'error', 'message': 'Missing required fields'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     try:
         # Parse datetimes
         new_start = parse_datetime(start_str)
         if not new_start:
-            return JsonResponse({'status': 'error', 'message': 'Invalid start datetime format'}, status=400)
+            return Response(
+                {'status': 'error', 'message': 'Invalid start datetime format'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         new_end = parse_datetime(end_str) if end_str else None
 
         if model_type.lower() == 'event':
-            # Handle Event model
             event = Event.objects.get(id=event_id)
             if event.calendar.user != request.user:
-                return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+                return Response(
+                    {'status': 'error', 'message': 'Permission denied'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-            # Update fields
+            # Store original duration
+            original_duration = event.duration if event.duration else (event.end - event.start if event.end else None)
+            
+            # Update start time
             event.start = new_start
+            
+            # Handle end time
             if new_end is not None:
                 event.end = new_end
-
-            # Validate
+                event.duration = None  # Let model recalculate
+            elif original_duration:  # Maintain duration
+                event.end = new_start + original_duration
+                event.duration = original_duration
+            
             try:
                 event.full_clean()
+                event.save()
             except ValidationError as e:
-                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
-            event.save()
+                return Response(
+                    {'status': 'error', 'message': str(e)},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
         elif model_type.lower() == 'studysession':
-            # Handle StudySession model
+            # Similar logic for StudySession
             study_session = StudySession.objects.get(id=event_id)
             if study_session.host != request.user:
-                return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+                return Response(
+                    {'status': 'error', 'message': 'Permission denied'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
 
-            # Update fields
+            original_start = study_session.start_time
+            original_end = study_session.end_time
+            
             study_session.start_time = new_start
             if new_end is not None:
                 study_session.end_time = new_end
-
-            # Validate
-            try:
-                study_session.full_clean()
-            except ValidationError as e:
-                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
+            elif original_end:
+                duration = original_end - original_start
+                study_session.end_time = new_start + duration
+            
+            if study_session.end_time and study_session.start_time and study_session.end_time <= study_session.start_time:
+                return Response(
+                    {'status': 'error', 'message': f'End time must be after start time'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             study_session.save()
             
         else:
-            return JsonResponse({'status': 'error', 'message': 'Invalid model type'}, status=400)
+            return Response(
+                {'status': 'error', 'message': 'Invalid model type'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        return JsonResponse({
+        return Response({
             'status': 'success',
             'event_id': event_id,
-            'new_start_time': new_start,
-            'new_finish_time': new_end,
+            'new_start': new_start,
+            'new_end': new_end if new_end else (event.end if model_type.lower() == 'event' else study_session.end_time),
             'model': model_type
         })
 
     except (Event.DoesNotExist, StudySession.DoesNotExist):
-        return JsonResponse({'status': 'error', 'message': 'Event not found'}, status=404)
+        return Response(
+            {'status': 'error', 'message': 'Event not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        return Response(
+            {'status': 'error', 'message': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 @login_required
 @api_view(['POST'])
