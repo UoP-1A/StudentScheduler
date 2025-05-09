@@ -33,5 +33,5 @@ urlpatterns = [
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += [
-    path('', RedirectView.as_view(url='/calendar/', permanent=True)),
+    path('', RedirectView.as_view(url='/calendar/', permanent=True), name="home"),
 ] 

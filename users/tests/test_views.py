@@ -413,3 +413,123 @@ class SendFriendRequestViewTests(TestCase):
             from_user=self.user3,
             to_user=self.user2
         ).exists())
+
+
+class RespondRequestViewTests(TestCase):
+    def setUp(self):
+        self.user1 = CustomUser.objects.create_user(
+            username='user1',
+            email='user1@example.com',
+            password='testpass123'
+        )
+        self.user2 = CustomUser.objects.create_user(
+            username='user2',
+            email='user2@example.com',
+            password='testpass123'
+        )
+        self.user3 = CustomUser.objects.create_user(
+            username='user3',
+            email='user3@example.com',
+            password='testpass123'
+        )
+        
+        self.valid_request = FriendRequest.objects.create(
+            from_user=self.user1,
+            to_user=self.user2,
+            status='pending'
+        )
+        self.invalid_request = FriendRequest.objects.create(
+            from_user=self.user1,
+            to_user=self.user3,
+            status='pending'
+        )
+        
+        self.home_url = reverse('home')
+        self.friend_requests_url = reverse('friend_requests')
+        self.accept_url = reverse('respond_request', args=[self.valid_request.id, 'accept'])
+        self.reject_url = reverse('respond_request', args=[self.valid_request.id, 'reject'])
+
+    def test_anonymous_user_redirected_to_login(self):
+        """Test anonymous users are redirected to login"""
+        response = self.client.get(self.accept_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_non_recipient_redirected_to_home(self):
+        """Test users who aren't the recipient are redirected"""
+        self.client.force_login(self.user3)  # Not the recipient
+        response = self.client.get(self.accept_url)
+        self.assertIn(response.url, self.home_url)
+
+    def test_accept_request_works(self):
+        """Test accepting a friend request works correctly"""
+        self.client.force_login(self.user2)  # Valid recipient
+        
+        response = self.client.get(self.accept_url)
+        self.assertRedirects(response, self.friend_requests_url)
+        
+        # Check request status updated
+        self.valid_request.refresh_from_db()
+        self.assertEqual(self.valid_request.status, 'accepted')
+        
+        # Check friends lists updated
+        self.assertIn(self.user1, self.user2.friends.all())
+        self.assertIn(self.user2, self.user1.friends.all())
+
+    def test_reject_request_works(self):
+        """Test rejecting a friend request works correctly"""
+        self.client.force_login(self.user2)  # Valid recipient
+        
+        response = self.client.get(self.reject_url)
+        self.assertRedirects(response, self.friend_requests_url)
+        
+        # Check request status updated
+        self.valid_request.refresh_from_db()
+        self.assertEqual(self.valid_request.status, 'rejected')
+        
+        # Check friends lists not updated
+        self.assertNotIn(self.user1, self.user2.friends.all())
+        self.assertNotIn(self.user2, self.user1.friends.all())
+
+    def test_invalid_action_redirects(self):
+        """Test invalid action parameter redirects without changes"""
+        self.client.force_login(self.user2)
+        invalid_action_url = reverse('respond_request', args=[self.valid_request.id, 'invalid'])
+        
+        response = self.client.get(invalid_action_url)
+        self.assertRedirects(response, self.friend_requests_url)
+        
+        # Check no changes were made
+        self.valid_request.refresh_from_db()
+        self.assertEqual(self.valid_request.status, 'pending')
+        self.assertNotIn(self.user1, self.user2.friends.all())
+
+    def test_nonexistent_request_returns_404(self):
+        """Test non-existent request ID returns 404"""
+        self.client.force_login(self.user2)
+        response = self.client.get(reverse('respond_request', args=[9999, 'accept']))
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_request_works(self):
+        """Test POST requests work the same as GET"""
+        self.client.force_login(self.user2)
+        response = self.client.post(self.accept_url)
+        self.assertRedirects(response, self.friend_requests_url)
+        
+        self.valid_request.refresh_from_db()
+        self.assertEqual(self.valid_request.status, 'accepted')
+
+    def test_multiple_accepts_dont_duplicate_friends(self):
+        """Test multiple accepts don't duplicate friends"""
+        self.client.force_login(self.user2)
+        
+        # First accept
+        self.client.get(self.accept_url)
+        friend_count1 = self.user2.friends.count()
+        
+        # Second accept
+        self.client.get(self.accept_url)
+        friend_count2 = self.user2.friends.count()
+        
+        self.assertEqual(friend_count1, friend_count2)
+        self.assertEqual(friend_count1, 1)
