@@ -614,3 +614,86 @@ class FriendRequestsViewTests(TestCase):
         self.assertEqual(requests_in_context.count(), 0)
         self.assertNotContains(response, 'accepted')
         self.assertNotContains(response, 'rejected')
+
+class FriendsListViewTests(TestCase):
+    def setUp(self):
+        # Create test users
+        self.user1 = CustomUser.objects.create_user(
+            username='user1',
+            email='user1@example.com',
+            password='testpass123'
+        )
+        self.user2 = CustomUser.objects.create_user(
+            username='user2',
+            email='user2@example.com',
+            password='testpass123'
+        )
+        self.user3 = CustomUser.objects.create_user(
+            username='user3',
+            email='user3@example.com',
+            password='testpass123'
+        )
+        
+        # Set up friendships
+        self.user1.friends.add(self.user2)
+        self.user1.friends.add(self.user3)
+        
+        self.url = reverse('friends_list')
+
+    def test_anonymous_user_redirected_to_login(self):
+        """Test anonymous users are redirected to login"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_authenticated_user_sees_friends(self):
+        """Test authenticated user sees their friends list"""
+        self.client.force_login(self.user1)
+        response = self.client.get(self.url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/friends.html')
+        
+        # Check friends in context
+        friends_in_context = response.context['friends']
+        self.assertEqual(friends_in_context.count(), 2)
+        self.assertIn(self.user2, friends_in_context)
+        self.assertIn(self.user3, friends_in_context)
+
+    def test_no_friends_shows_empty_list(self):
+        """Test user with no friends sees empty list"""
+        user4 = CustomUser.objects.create_user(
+            username='user5',
+            email='user5@example.com',
+            password='testpass123'
+        )
+        
+        self.client.force_login(user4)
+        response = self.client.get(self.url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "You have no friends yet.") 
+
+    def test_friendship_is_reciprocal(self):
+        """Test friendship is shown regardless of who initiated"""
+        # user4 is friends with user1 but user1 didn't initiate
+        user4 = CustomUser.objects.create_user(
+            username='user4',
+            email='user4@example.com',
+            password='testpass123'
+        )
+        user4.friends.add(self.user1)
+        
+        self.client.force_login(self.user1)
+        response = self.client.get(self.url)
+        
+        self.assertIn(user4, response.context['friends'])
+
+    def test_template_content(self):
+        """Test template renders friend information correctly"""
+        self.client.force_login(self.user1)
+        response = self.client.get(self.url)
+        
+        # Check friend usernames appear in response
+        self.assertContains(response, self.user2.username)
+        self.assertContains(response, self.user3.username)
