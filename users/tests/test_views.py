@@ -697,3 +697,135 @@ class FriendsListViewTests(TestCase):
         # Check friend usernames appear in response
         self.assertContains(response, self.user2.username)
         self.assertContains(response, self.user3.username)
+
+class UserListViewTests(TestCase):
+    def setUp(self):
+        # Create test users
+        self.current_user = CustomUser.objects.create_user(
+            username='current',
+            email='current@example.com',
+            password='testpass123'
+        )
+        self.friend = CustomUser.objects.create_user(
+            username='friend',
+            email='friend@example.com',
+            password='testpass123'
+        )
+        self.sent_request_user = CustomUser.objects.create_user(
+            username='sent_request',
+            email='sent@example.com',
+            password='testpass123'
+        )
+        self.received_request_user = CustomUser.objects.create_user(
+            username='received_request',
+            email='received@example.com',
+            password='testpass123'
+        )
+        self.available_user = CustomUser.objects.create_user(
+            username='available',
+            email='available@example.com',
+            password='testpass123'
+        )
+        
+        # Set up relationships
+        self.current_user.friends.add(self.friend)
+        FriendRequest.objects.create(
+            from_user=self.current_user,
+            to_user=self.sent_request_user,
+            status='pending'
+        )
+        FriendRequest.objects.create(
+            from_user=self.received_request_user,
+            to_user=self.current_user,
+            status='pending'
+        )
+        
+        self.url = reverse('user_list')
+
+    def test_anonymous_user_redirected_to_login(self):
+        """Test anonymous users are redirected to login"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_authenticated_user_sees_correct_users(self):
+        """Test authenticated user sees only available users"""
+        self.client.force_login(self.current_user)
+        response = self.client.get(self.url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/user_list.html')
+        
+        # Check only available user is in context
+        users_in_context = response.context['users']
+        self.assertEqual(users_in_context.count(), 1)
+        self.assertIn(self.available_user, users_in_context)
+        self.assertNotIn(self.friend, users_in_context)
+        self.assertNotIn(self.sent_request_user, users_in_context)
+        self.assertNotIn(self.received_request_user, users_in_context)
+
+    def test_excludes_current_user(self):
+        """Test current user is excluded from list"""
+        self.client.force_login(self.current_user)
+        response = self.client.get(self.url)
+        
+        users = response.context['users']
+        self.assertNotIn(self.current_user, users)
+
+    def test_empty_case(self):
+        """Test when no users are available (complete isolation)"""
+        # Create an isolated environment
+        with self.settings():
+            isolated_user = CustomUser.objects.create_user(
+                username='isolated',
+                email='isolated@example.com',
+                password='testpass123'
+            )
+            
+            CustomUser.objects.exclude(id=isolated_user.id).delete()
+            
+            self.client.force_login(isolated_user)
+            response = self.client.get(self.url)
+            
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.context['users']), 0)
+
+    def test_multiple_available_users(self):
+        """Test multiple available users are shown"""
+        # Create additional available users
+        available_user2 = CustomUser.objects.create_user(
+            username='available2',
+            email='available2@example.com',
+            password='testpass123'
+        )
+        available_user3 = CustomUser.objects.create_user(
+            username='available3',
+            email='available3@example.com',
+            password='testpass123'
+        )
+        
+        self.client.force_login(self.current_user)
+        response = self.client.get(self.url)
+        
+        users = response.context['users']
+        self.assertEqual(users.count(), 3)
+        self.assertIn(available_user2, users)
+        self.assertIn(available_user3, users)
+
+    def test_accepted_friends_excluded(self):
+        """Test users with accepted friend requests are excluded"""
+        accepted_user = CustomUser.objects.create_user(
+            username='accepted',
+            email='accepted@example.com',
+            password='testpass123'
+        )
+        FriendRequest.objects.create(
+            from_user=self.current_user,
+            to_user=accepted_user,
+            status='accepted'
+        )
+        
+        self.client.force_login(self.current_user)
+        response = self.client.get(self.url)
+        
+        self.assertNotIn(accepted_user, response.context['users'])

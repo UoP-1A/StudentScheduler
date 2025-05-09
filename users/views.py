@@ -135,3 +135,4 @@ def user_list(request):
     users = CustomUser.objects.exclude(id=current_user.id).exclude(id__in=friends).exclude(id__in=sent_requests).exclude(id__in=received_requests)
     
     return render(request, 'users/user_list.html', {'users': users})
+ 
