@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from django.urls import reverse
 from django.views import View
 
 from .models import CustomUser, FriendRequest
@@ -38,6 +39,12 @@ class RegisterView(View):
     initial = {"key": "value"}
     template_name = "registration/register.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        # Check if user is authenticated and redirect to profile if they are
+        if request.user.is_authenticated:
+            return redirect(reverse("profile"))
+        return super().dispatch(request, *args, **kwargs)
+
     def get(self, request, *args, **kwargs):
         form = self.form_class(initial=self.initial)
         return render(request, self.template_name, {"form": form})
@@ -73,14 +80,16 @@ def send_friend_request(request, user_id):
     to_user = get_object_or_404(CustomUser, id=user_id)
     from_user = request.user
 
+    if from_user == to_user:
+        return redirect('user_list')
+
     if FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists():
         return redirect('user_list')
 
     try:
         FriendRequest.objects.create(from_user=from_user, to_user=to_user, status='pending')
-        print("Friend request created successfully!") 
     except Exception as e:
-        print(f"Error creating friend request: {e}") 
+        return redirect('user_list')
 
     return redirect('user_list')
 
