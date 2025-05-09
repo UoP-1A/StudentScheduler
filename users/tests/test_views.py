@@ -533,3 +533,84 @@ class RespondRequestViewTests(TestCase):
         
         self.assertEqual(friend_count1, friend_count2)
         self.assertEqual(friend_count1, 1)
+
+class FriendRequestsViewTests(TestCase):
+    def setUp(self):
+        self.user1 = CustomUser.objects.create_user(
+            username='user1',
+            email='user1@example.com',
+            password='testpass123'
+        )
+        self.user2 = CustomUser.objects.create_user(
+            username='user2',
+            email='user2@example.com',
+            password='testpass123'
+        )
+        self.user3 = CustomUser.objects.create_user(
+            username='user3',
+            email='user3@example.com',
+            password='testpass123'
+        )
+        
+        self.pending_request1 = FriendRequest.objects.create(
+            from_user=self.user2,
+            to_user=self.user1,
+            status='pending'
+        )
+        self.pending_request2 = FriendRequest.objects.create(
+            from_user=self.user3,
+            to_user=self.user1,
+            status='pending'
+        )
+
+        # Create non-pending requests that shouldn't appear
+        FriendRequest.objects.create(
+            from_user=self.user1,
+            to_user=self.user2,
+            status='accepted'
+        )
+        FriendRequest.objects.create(
+            from_user=self.user1,
+            to_user=self.user3,
+            status='rejected'
+        )
+        
+        self.url = reverse('friend_requests')
+
+    def test_anonymous_user_redirected_to_login(self):
+        """Test anonymous users are redirected to login"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_authenticated_user_sees_own_requests(self):
+        """Test authenticated user sees only their pending requests"""
+        self.client.force_login(self.user1)
+        response = self.client.get(self.url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/friend_requests.html')
+        
+        # Check only pending requests to this user are included
+        requests_in_context = response.context['requests']
+        self.assertEqual(requests_in_context.count(), 2)
+        self.assertIn(self.pending_request1, requests_in_context)
+        self.assertIn(self.pending_request2, requests_in_context)
+
+    def test_no_requests_shows_empty_list(self):
+        """Test user with no pending requests sees empty list"""
+        self.client.force_login(self.user2)  # user2 has no pending requests to them
+        response = self.client.get(self.url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['requests']), 0)
+
+    def test_only_pending_requests_included(self):
+        """Test only pending requests are included, not accepted/rejected"""
+        self.client.force_login(self.user2)
+        response = self.client.get(self.url)
+        
+        requests_in_context = response.context['requests']
+        self.assertEqual(requests_in_context.count(), 0)
+        self.assertNotContains(response, 'accepted')
+        self.assertNotContains(response, 'rejected')
