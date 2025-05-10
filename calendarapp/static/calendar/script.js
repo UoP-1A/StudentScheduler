@@ -92,6 +92,7 @@ function showEventDetails(info) {
   const eventStart = document.querySelector("#event-start");
   const eventEnd = document.querySelector("#event-end");
   const eventDescription = document.querySelector("#event-description");
+  const eventModel = document.querySelector("#event-type"); // Add this line to your HTML modal
 
   const event = info.event;
   
@@ -111,6 +112,7 @@ function showEventDetails(info) {
   const start = formatForDisplay(event.start);
   const end = formatForDisplay(event.end);
   const description = event.extendedProps.description || "N/A";
+  const model = event.extendedProps.model || "N/A";
 
   eventTitle.textContent = event.title;
   eventTitle.setAttribute("title", event.title);
@@ -118,6 +120,10 @@ function showEventDetails(info) {
   eventEnd.textContent = end;
   eventDescription.textContent = description;
   eventDescription.setAttribute("title", description);
+  
+  // Display model information
+  eventModel.textContent = model;
+  eventModel.setAttribute("title", model);
 
   modal.style.display = "block";
 }
