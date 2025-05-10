@@ -133,6 +133,7 @@ def create(request, automated=0):
                     hours_per_day.append(hours)
 
 
+
                 #pick a day that has the least amount of hours, while avoiding days with 0 hours so the user can have a free day
                 day_of_new_session = 0
                 minimum_hours = 8
@@ -146,7 +147,7 @@ def create(request, automated=0):
                     day = 0
                     while day < len(hours_per_day):
                         if hours_per_day[day] == 0:
-                            day_of_new_session = day
+                            day_of_new_session = day 
                             minimum_hours = 0
                         day += 1
                     if minimum_hours != 0:
@@ -205,8 +206,8 @@ def create(request, automated=0):
 
                     #if no gaps were found, create the session either before or after the events
                     if not session_created:
-                        before_event = 9
-                        after_event = 9
+                        before_event = timedelta(9)
+                        after_event = timedelta(9)
                         if (datetime.fromisoformat(day_of_events[0]['start']) - datetime.fromisoformat(day_of_events[0]['start']).replace(hour=9, minute=0, second=0, microsecond=0)).total_seconds()/3600 >= 2.0:
                             before_event = datetime.fromisoformat(day_of_events[0]['start']) - datetime.fromisoformat(day_of_events[0]['start']).replace(hour=9, minute=0, second=0, microsecond=0)
                         if (datetime.fromisoformat(day_of_events[-1]['end']).replace(hour=18, minute=0, second=0, microsecond=0) - datetime.fromisoformat(day_of_events[-1]['end'])).total_seconds()/3600 >= 2.0:
