@@ -718,7 +718,7 @@ Study Sessions
 Overview
 --------
 
-The Study Sessions feature in StudySync enables users to create, join, and manage collaborative study events. Designed to foster academic teamwork and effective time management, it supports both one-time and recurring sessions, participant management, and seamless integration with the calendar system. This section is highly user-focused, guiding students through the process of organizing and participating in group study activities.
+The Study Sessions feature in StudySync enables users to create, join, and manage collaborative study events. Designed to foster academic teamwork and effective time management, it supports both one-time and recurring sessions, participant management, and seamless integration with the calendar system. This section is highly user-focused, guiding students through the process of organising and participating in group study activities.
 
 Usage
 ----------
@@ -775,7 +775,7 @@ Maintaining the Study Sessions feature involves:
   The system checks that end times are after start times and that recurrence amounts are positive.
 - **Ensuring unique participation:**  
   Users cannot join the same session multiple times, enforced both in the database and in the application logic.
-- **Synchronizing with the calendar:**  
+- **Synchronising with the calendar:**  
   All sessions are linked to the user's calendar, and recurring sessions generate appropriate rules for calendar integration.
 - **Updating forms and templates:**  
   As the study session model evolves, forms and templates should be updated to reflect new fields or validation rules.
