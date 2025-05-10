@@ -5,12 +5,39 @@ from django.urls import reverse
 from django.views import View
 
 from .models import CustomUser, FriendRequest
-from .forms import RegisterForm, LoginForm
+from .forms import RegisterForm, LoginForm, ProfilePictureForm, ProfileInfoForm
 
 @login_required
 def profile_view(request):
     request.session['from_profile'] = True
-    return render(request, "users/profile.html")
+    
+    # Initialize forms
+    picture_form = ProfilePictureForm(instance=request.user)
+    info_form = ProfileInfoForm(instance=request.user)
+    
+    context = {
+        'picture_form': picture_form,
+        'info_form': info_form,
+    }
+    return render(request, "users/profile.html", context)
+
+@login_required
+def update_profile_picture(request):
+    if request.method == 'POST':
+        form = ProfilePictureForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+    return redirect('profile')
+
+@login_required
+def update_profile_info(request):
+    if request.method == 'POST':
+        form = ProfileInfoForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+    return redirect('profile')
 
 @login_required
 def delete_account_confirmation_view(request): 

@@ -10,6 +10,8 @@ urlpatterns = [
     path("profile/", views.profile_view, name="profile"),
     path("profile/delete-account-confirm", views.delete_account_confirmation_view, name="delete_account_confirmation"),
     path("profile/delete-account", views.delete_account, name="delete_account"),
+    path("profile/update-picture/", views.update_profile_picture, name="update_picture"),
+    path("profile/update-info/", views.update_profile_info, name="update_info"),
 
     path('users/', views.user_list, name='user_list'),
     path('friend-requests/', views.friend_requests, name='friend_requests'),

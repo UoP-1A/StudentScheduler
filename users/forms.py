@@ -66,3 +66,16 @@ class FriendRequestForm(forms.ModelForm):
     class Meta:
         model = FriendRequest
         fields = ['to_user']
+
+class ProfilePictureForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['profile_picture']
+
+class ProfileInfoForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'profile_bio']
+        widgets = {
+            'profile_bio': forms.Textarea(attrs={'rows': 3}),
+        }
