@@ -15,7 +15,7 @@ Login and Accounts
 Overview
 --------
 
-This module provides user authentication and account management for StudySync. It uses Django's authentication system, custom forms, and session management to ensure a secure and user-friendly experience. The design emphasizes both ease of use and protection against accidental or unauthorized actions.
+This module provides user authentication and account management for StudySync. It uses Django's authentication system, custom forms, and session management to ensure a secure and user-friendly experience. The design emphasises both ease of use and protection against accidental or unauthorised actions.
 
 Usage
 -----------
@@ -119,7 +119,7 @@ The profile page provides access to user-specific features and settings. Account
 Deleting Account
 ----------------
 
-Account deletion is protected by session-based navigation. Users must visit both the profile and confirmation pages before deletion is allowed. This approach prevents accidental or unauthorized deletions. Maintenance requires testing the navigation flow and session logic after changes.
+Account deletion is protected by session-based navigation. Users must visit both the profile and confirmation pages before deletion is allowed. This approach prevents accidental or unauthorised deletions. Maintenance requires testing the navigation flow and session logic after changes.
 
 .. image:: delete_account.jpg
    :width: 800
@@ -268,7 +268,7 @@ Integrity checks prevent duplicate friend requests and ensure that both users' f
 User List
 ---------
 
-The user list page allows users to discover and connect with others who are not yet friends and have no pending requests. Maintenance involves optimizing queries for performance and ensuring privacy by excluding inappropriate users.
+The user list page allows users to discover and connect with others who are not yet friends and have no pending requests. Maintenance involves optimsing queries for performance and ensuring privacy by excluding inappropriate users.
 
 .. image:: user_image.jpg
    :width: 200
@@ -294,7 +294,7 @@ Module
 Overview
 --------
 
-The Module component of StudySync allows users to manage their academic modules and track their grades for each module. This system enforces limits on module and grade creation, calculates weighted averages, and provides robust validation to ensure data integrity. It is designed to help students organize their coursework and monitor their academic progress in a structured way.
+The Module component of StudySync allows users to manage their academic modules and track their grades for each module. This system enforces limits on module and grade creation, calculates weighted averages, and provides robust validation to ensure data integrity. It is designed to help students organise their coursework and monitor their academic progress in a structured way.
 
 Usage
 --------
@@ -533,7 +533,7 @@ Calendar
 Overview
 --------
 
-The Calendar feature in StudySync is designed to help users efficiently organize their academic schedules, manage important deadlines, and coordinate study sessions with peers. Its intuitive interface makes it easy for students to stay on top of their coursework and collaborate with others.
+The Calendar feature in StudySync is designed to help users efficiently organise their academic schedules, manage important deadlines, and coordinate study sessions with peers. Its intuitive interface makes it easy for students to stay on top of their coursework and collaborate with others.
 
 .. image:: calendar_display.jpg
    :width: 500
@@ -545,7 +545,7 @@ Usage
 The Calendar allows users to:
 
 - **Create, view, and edit study sessions and academic events** directly from their dashboard.
-- **Link events to specific modules or courses** for better organization.
+- **Link events to specific modules or courses** for better organisation.
 - **Invite friends or study group members** to shared events, making collaborative planning seamless.
 - **Receive reminders and notifications** for upcoming sessions, helping users stay on track.
 
@@ -563,7 +563,7 @@ Maintenance
 
 Maintaining the Calendar involves:
 
-- **Ensuring event data is synchronized** across all user devices and among group members.
+- **Ensuring event data is synchronised** across all user devices and among group members.
 - **Managing time zones** so events display correctly for all participants.
 - **Delivering notifications and reminders** reliably and on time.
 - **Updating the interface and features** based on user feedback and academic calendar changes.
@@ -575,7 +575,7 @@ Concrete Examples
 
 **Example 1: Scheduling a Study Session**
 
-A user wants to organize a group study session for their "Calculus" module:
+A user wants to organise a group study session for their "Calculus" module:
 
 .. code-block:: python
 
@@ -603,6 +603,114 @@ Troubleshooting Tips
 - **Unable to edit or delete an event?** Verify that you are the event creator or have the necessary permissions.
 
 If issues persist, contact StudySync support or check the FAQ for further assistance.
+
+
+Notifications
+================
+
+Overview
+--------
+
+The Notifications feature in StudySync keeps users informed about important updates, such as new friend requests, upcoming study sessions, or changes to group events. Notifications are designed to ensure users never miss critical information and can respond promptly to academic and social activities.
+
+.. image:: notifications_ss_1.jpeg
+   :width: 500
+   :alt: notification_1
+
+Usage
+----------
+
+Notifications allow users to:
+
+- **Receive alerts** for events like friend requests, session invitations, and reminders.
+- **View all notifications** in a dedicated notifications page, accessible from the main navigation.
+- **Mark notifications as read** to keep their notification list organised and manageable.
+
+**How to Use:**
+
+1. **Access Notifications:**  
+   Click on the notifications icon or link in your dashboard to view all your notifications.
+
+2. **Read Notifications:**  
+   Notifications are displayed in chronological order. Unread notifications are highlighted for easy identification.
+
+3. **Mark as Read:**  
+   Click the "Mark as Read" button on a notification to acknowledge it. This helps keep your feed organised and ensures you focus on new updates.
+
+
+.. image:: notifications_ss_2.jpeg
+   :width: 800
+   :alt: notification_1
+
+
+.. code-block:: python
+
+   # Example: Viewing notifications
+   @login_required
+   def notifications_view(request):
+       notificationsList = Notification.objects.filter(user=request.user).order_by('timestamp')
+       return render(request, 'notifications/notifications.html', {'notificationsList': notificationsList})
+
+   # Example: Marking a notification as read
+   @require_POST
+   @login_required
+   def mark_as_read(request, notification_id):
+       notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+       notification.is_read = True
+       notification.save()
+       return redirect('notifications')
+
+Maintenance
+------------
+
+Maintaining the Notifications system involves:
+
+- **Ensuring timely delivery** of new notifications for all relevant events.
+- **Managing notification status** (read/unread) to help users prioritise their attention.
+- **Regularly testing** the notification display and mark-as-read functionality for accuracy and responsiveness.
+- **Updating notification types and templates** as new features or events are added to StudySync.
+
+Consistent maintenance ensures that notifications remain relevant, actionable, and user-friendly.
+
+Concrete Examples
+-------------------
+
+**Example 1: New Friend Request**
+
+- When another user sends you a friend request, you receive a notification:
+  - "You have a new friend request from Alex."
+
+**Example 2: Study Session Created**
+
+- When a study session is creaded by you or generated:
+  - "Your study session, "Custom Name Of Study Sesson" was created successfully!"
+
+**Example 3: Marking as Read**
+
+.. code-block:: python
+
+   # Mark a notification as read
+   mark_as_read(request, notification_id=42)
+
+- The notification is now marked as read and will no longer be highlighted.
+
+Troubleshooting Tips
+------------------------
+
+- **Not receiving notifications?**  
+  Check your account settings to ensure notifications are enabled and your email address is correct.
+
+- **Notifications not updating?**  
+  Refresh the notifications page or log out and log back in.
+
+- **Cannot mark as read?**  
+  Ensure you are logged in and have permission to update the notification.
+
+- **Notifications page is empty?**  
+  You may not have any notifications yet, or they may have all been marked as read.
+
+If you encounter persistent issues, contact StudySync support for assistance.
+
 
 Additional Links
 ==============
