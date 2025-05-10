@@ -6,11 +6,11 @@
 
 <h3>Events:</h3>
 
-{% if events_results %}
+{% if results %}
 <ul>
-    {% for event in event_results %}
+    {% for event in results %}
     <li>
-        {{ event.title }} | {{ event.calendar.name }} | {{ event.start }}<br>
+        {{ event.title }} | {{ event.start }}<br>
     </li>
     {% endfor %}
 </ul>

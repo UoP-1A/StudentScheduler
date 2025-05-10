@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.dateparse import parse_datetime
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
@@ -253,4 +254,12 @@ def search_results(request):
     query = request.GET.get('q')
     results = []
 
+    if query:
+        print(f"Search query: {query}")
+        event_results = Event.objects.filter(
+            Q(title__icontains=query) |
+            Q(start__icontains=query)
+        ).distinct()
+        results.extend(event_results)
+        print(f"Event results: {results}")
     return render(request, 'search_results.html', {'query': query, 'results': results})
