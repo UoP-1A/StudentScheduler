@@ -1,5 +1,5 @@
 body {
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Logout form styling (for navbar as it requires POST request) */
@@ -107,4 +107,18 @@ body {
 /* Darker shade on hover */
 .delete-submit:hover {
   background-color: #c82333;
+}
+
+.position-relative:hover .btn-light {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Form styling consistency */
+#pictureForm input[type="file"] {
+  padding: 0.375rem 0.75rem;
+}
+
+/* Modal button alignment */
+.modal-footer {
+  justify-content: space-between;
 }

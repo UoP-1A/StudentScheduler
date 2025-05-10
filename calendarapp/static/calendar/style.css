@@ -1,12 +1,12 @@
+/* Adjust calendar container */
 #calendar {
     padding: 10px;
-    max-height: calc(100vh - 60px);
+    max-height: calc(100vh - 65px);
+    height: 100vh;
+    overflow-y: auto;
 }
 
-.fc-event-title, .fc-event-time {
-    white-space: normal;
-}
-
+/* Sticky headers and toolbar */
 .fc-toolbar, .fc-col-header, .fc-daygrid {
     position: sticky;
     top: 0;
@@ -14,26 +14,45 @@
     background: white;
 }
 
+/* Now indicator line */
 .fc-now-indicator {
     width: 100%; 
     left: 0 !important; 
 }
 
-.fc-event {
-    --event-bg-color: #3788d8; 
-    background-color: var(--event-bg-color);
-}
-
+/* Hover effect for events */
 .fc-event:hover {
     cursor: pointer;
     filter: brightness(0.875); 
 }
 
-#calendar-container {
-    height: 100%;
+/* Ensure long titles/wrap */
+.fc-event-title, .fc-event-time {
+    white-space: normal;
 }
 
-#calendar {
-    height: 100vh;
-    overflow-y: auto;
+/* Remove blue and underline from clickable date numbers */
+.fc-daygrid-day-number {
+    color: black !important;
+    text-decoration: none !important;
+    font-weight: bold;
+}
+
+/* Override the anchor tag around the day number */
+.fc-col-header-cell-cushion {
+    color: black !important;
+    text-decoration: none !important;
+    font-weight: bold;
+    pointer-events: none; /* disables click */
+    cursor: default;
+}
+
+/* ✅ Fix: Restore background styling for events in month view */
+.fc-daygrid-event {
+    background-color: #3788d8 !important; /* Or any theme color */
+    color: white !important;
+    border: 1px solid #2c6ebd !important;
+    border-radius: 4px;
+    padding: 1px 4px;
+    font-weight: 500;
 }

@@ -1,14 +1,34 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>Pending Friend Requests</h2>
-  {% for req in requests %}
-    <div class="request">
-      <p>{{ req.from_user.username }} wants to be friends</p>
-      <a href="{% url 'respond_request' req.id 'accept' %}">Accept</a>
-      <a href="{% url 'respond_request' req.id 'reject' %}">Reject</a>
+<div class="container mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h2 class="card-title mb-0">Pending Friend Requests</h2>
     </div>
-  {% empty %}
-    <p>No pending requests</p>
-  {% endfor %}
+    <div class="card-body">
+      {% for req in requests %}
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <i class="bi bi-person-plus-fill me-2"></i>
+            <strong>{{ req.from_user.username }}</strong> wants to be friends
+          </div>
+          <div>
+            <a href="{% url 'respond_request' req.id 'accept' %}" class="btn btn-success btn-sm me-2">
+              <i class="bi bi-check-circle"></i> Accept
+            </a>
+            <a href="{% url 'respond_request' req.id 'reject' %}" class="btn btn-danger btn-sm">
+              <i class="bi bi-x-circle"></i> Reject
+            </a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="text-center py-4">
+          <i class="bi bi-inbox display-4 text-muted"></i>
+          <p class="text-muted mt-3">No pending friend requests</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
 {% endblock %}

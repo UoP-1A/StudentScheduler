@@ -1,15 +1,43 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from django.urls import reverse
 from django.views import View
 
 from .models import CustomUser, FriendRequest
-from .forms import RegisterForm, LoginForm
+from .forms import RegisterForm, LoginForm, ProfilePictureForm, ProfileInfoForm
 
 @login_required
 def profile_view(request):
     request.session['from_profile'] = True
-    return render(request, "users/profile.html")
+    
+    # Initialize forms
+    picture_form = ProfilePictureForm(instance=request.user)
+    info_form = ProfileInfoForm(instance=request.user)
+    
+    context = {
+        'picture_form': picture_form,
+        'info_form': info_form,
+    }
+    return render(request, "users/profile.html", context)
+
+@login_required
+def update_profile_picture(request):
+    if request.method == 'POST':
+        form = ProfilePictureForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+    return redirect('profile')
+
+@login_required
+def update_profile_info(request):
+    if request.method == 'POST':
+        form = ProfileInfoForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+    return redirect('profile')
 
 @login_required
 def delete_account_confirmation_view(request): 
@@ -37,6 +65,12 @@ class RegisterView(View):
     form_class = RegisterForm
     initial = {"key": "value"}
     template_name = "registration/register.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check if user is authenticated and redirect to profile if they are
+        if request.user.is_authenticated:
+            return redirect(reverse("profile"))
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         form = self.form_class(initial=self.initial)
@@ -73,14 +107,16 @@ def send_friend_request(request, user_id):
     to_user = get_object_or_404(CustomUser, id=user_id)
     from_user = request.user
 
+    if from_user == to_user:
+        return redirect('user_list')
+
     if FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists():
         return redirect('user_list')
 
     try:
         FriendRequest.objects.create(from_user=from_user, to_user=to_user, status='pending')
-        print("Friend request created successfully!") 
     except Exception as e:
-        print(f"Error creating friend request: {e}") 
+        return redirect('user_list')
 
     return redirect('user_list')
 
@@ -126,3 +162,4 @@ def user_list(request):
     users = CustomUser.objects.exclude(id=current_user.id).exclude(id__in=friends).exclude(id__in=sent_requests).exclude(id__in=received_requests)
     
     return render(request, 'users/user_list.html', {'users': users})
+ 
