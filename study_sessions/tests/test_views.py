@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from users.models import CustomUser
 from calendarapp.models import Calendar
 from study_sessions.models import StudySession, StudySessionParticipant, RecurringStudySession
-from study_sessions.forms import StudySessionForm, RecurringSessionForm
+from study_sessions.forms import AutoStudySessionForm, ManualStudySessionForm, RecurringSessionForm
 
 class StudySessionCreateViewTests(TestCase):
     def setUp(self):
@@ -51,7 +51,7 @@ class StudySessionCreateViewTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.context['form'], StudySessionForm)
+        self.assertIsInstance(response.context['form'], ManualStudySessionForm)
         self.assertTemplateUsed(response, 'study_sessions/create.html')
 
     def test_create_valid_session(self):
