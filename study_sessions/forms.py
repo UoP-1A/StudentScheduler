@@ -2,7 +2,21 @@ from django import forms
 from .models import StudySession, RecurringStudySession
 from users.models import CustomUser
 
-class StudySessionForm(forms.ModelForm):
+class AutoStudySessionForm(forms.ModelForm):
+    participants = forms.ModelMultipleChoiceField(
+        queryset=CustomUser.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Participants"
+    )
+
+    class Meta:
+        model = StudySession
+        fields = ['participants','title', 'description', 'is_recurring', 'calendar_id']
+        exclude = ['host', 'start_time', 'end_time', 'date']
+
+
+class ManualStudySessionForm(forms.ModelForm):
     participants = forms.ModelMultipleChoiceField(
         queryset=CustomUser.objects.all(),
         widget=forms.CheckboxSelectMultiple,
