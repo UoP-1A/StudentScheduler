@@ -19,7 +19,6 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
 
 from util.format_datetime import format_datetime
-from .forms import StudySessionForm, RecurringSessionForm
 
 @login_required
 @csrf_exempt

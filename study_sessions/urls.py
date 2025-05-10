@@ -1,5 +1,4 @@
 from django.urls import path, include
-from study_sessions import views
 from .views import get_sessions, create, create_recurring, get_recurring_sessions, method_of_creation
 
 app_name = 'study_sessions'
