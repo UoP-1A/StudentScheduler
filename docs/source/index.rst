@@ -712,6 +712,142 @@ Troubleshooting Tips
 If you encounter persistent issues, contact StudySync support for assistance.
 
 
+Study Sessions
+================
+
+Overview
+--------
+
+The Study Sessions feature in StudySync enables users to create, join, and manage collaborative study events. Designed to foster academic teamwork and effective time management, it supports both one-time and recurring sessions, participant management, and seamless integration with the calendar system. This section is highly user-focused, guiding students through the process of organizing and participating in group study activities.
+
+Usage
+----------
+
+With Study Sessions, users can:
+
+- **Create new study sessions** for specific dates and times, including a title and description.
+- **Set up recurring sessions** for ongoing study groups or regular meetings.
+- **Invite friends or other users** to participate in sessions.
+- **View all sessions they are hosting or participating in** directly from their dashboard or calendar.
+- **Automatically integrate sessions with their calendar**, ensuring reminders and scheduling are in sync.
+
+**How to Use:**
+
+1. **Create a Session:**  
+   Go to the study sessions page and fill out the form with details such as title, description, date, start and end time, and participants. You can also mark the session as recurring if needed.
+
+2. **Add Participants:**  
+   Invite friends or group members to join the session. The system ensures that each user can only join a session once.
+
+3. **View Sessions:**  
+   Access all your upcoming and past sessions, including those you host and those you participate in.
+
+4. **Recurring Sessions:**  
+   For sessions that repeat (e.g., weekly study groups), specify the recurrence amount and manage all occurrences easily.
+
+.. code-block:: python
+
+   # Example: Creating a study session
+   form = StudySessionForm(request.POST or None)
+   if form.is_valid():
+       study_session = form.save(commit=False)
+       study_session.host = request.user
+       study_session.save()
+       participants = form.cleaned_data.get('participants', [])
+       for participant in participants:
+           StudySessionParticipant.objects.get_or_create(
+               study_session=study_session,
+               participant=participant
+           )
+
+   # Example: Creating a recurring session
+   recurring_session = RecurringStudySession.objects.create(
+       session_id=study_session,
+       recurrence_amount=5
+   )
+
+Maintenance
+----------------
+
+Maintaining the Study Sessions feature involves:
+
+- **Validating session times and recurrence:**  
+  The system checks that end times are after start times and that recurrence amounts are positive.
+- **Ensuring unique participation:**  
+  Users cannot join the same session multiple times, enforced both in the database and in the application logic.
+- **Synchronizing with the calendar:**  
+  All sessions are linked to the user's calendar, and recurring sessions generate appropriate rules for calendar integration.
+- **Updating forms and templates:**  
+  As the study session model evolves, forms and templates should be updated to reflect new fields or validation rules.
+- **Testing permission checks:**  
+  Only session hosts can create or edit recurring sessions, and only participants or hosts can view session details.
+
+Concrete Examples
+----------------
+
+**Example 1: Creating a One-Time Study Session**
+
+A user wants to set up a one-time group study for an upcoming exam:
+
+.. code-block:: python
+
+   session = StudySession.objects.create(
+       host=request.user,
+       title="Physics Exam Review",
+       description="Go over past papers and key concepts",
+       date=date(2025, 5, 15),
+       start_time=time(17, 0),
+       end_time=time(19, 0),
+       calendar_id=my_calendar,
+   )
+
+**Example 2: Creating and Managing a Recurring Session**
+
+A user sets up a weekly math study group for 4 weeks:
+
+.. code-block:: python
+
+   session = StudySession.objects.create(
+       host=request.user,
+       title="Weekly Math Study",
+       description="Meet every week to review homework",
+       date=date(2025, 5, 10),
+       start_time=time(16, 0),
+       end_time=time(18, 0),
+       is_recurring=True,
+       calendar_id=my_calendar,
+   )
+   RecurringStudySession.objects.create(
+       session_id=session,
+       recurrence_amount=4
+   )
+
+**Example 3: Adding Participants**
+
+.. code-block:: python
+
+   StudySessionParticipant.objects.create(
+       study_session=session,
+       participant=another_user
+   )
+
+Troubleshooting Tips
+-----------------
+
+- **Cannot create a session:**  
+  Ensure the end time is after the start time and all required fields are filled in.
+- **Error when adding participants:**  
+  Check that the user is not already a participant in the session.
+- **Recurring session not saving:**  
+  Make sure the recurrence amount is a positive integer and the session is marked as recurring.
+- **Sessions not appearing in calendar:**  
+  Confirm that the session is linked to the correct calendar and that your dashboard is refreshed.
+- **Permission denied:**  
+  Only the session host can create or edit recurring sessions.
+
+If you encounter persistent issues, contact StudySync support or refer to the FAQ for further guidance.
+
+
 Additional Links
 ==============
 
