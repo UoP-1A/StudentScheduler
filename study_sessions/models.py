@@ -18,11 +18,11 @@ class StudySession(models.Model):
     def __str__(self):
         return f"{self.host.username} - {self.title}"  # Fixed: changed self.user to self.host
 
-#    def clean(self):
-#        """Add validation for time and date logic"""
-#        # Time validation
-#        if self.end_time <= self.start_time:
-#            raise ValidationError("End time must be after start time")
+    def clean(self):
+       """AWdd validation for time and date logic"""
+       # Time validation
+       if self.end_time <= self.start_time:
+           raise ValidationError("End time must be after start time")
 
     def save(self, *args, **kwargs):
         self.full_clean()
