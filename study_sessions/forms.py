@@ -1,7 +1,6 @@
 from django import forms
 from .models import StudySession, RecurringStudySession
 from users.models import CustomUser
-from calendarapp.models import Calendar
 
 class StudySessionForm(forms.ModelForm):
     participants = forms.ModelMultipleChoiceField(
