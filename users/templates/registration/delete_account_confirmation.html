@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+          <h2 class="mb-0">Delete Your Account</h2>
+        </div>
+        <div class="card-body">
+          
+          <p class="lead">This will permanently delete your account and all your data.</p>
+          <p class="text-muted mb-4">There's no way to undo this - everything will be gone forever.</p>
+          
+          <form method="POST" action="{% url 'delete_account' %}">
+            {% csrf_token %}
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-danger">
+                Yes, Delete My Account
+              </button>
+              <a href="{% url 'profile' %}" class="btn btn-outline-secondary">
+                No, Take Me Back
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

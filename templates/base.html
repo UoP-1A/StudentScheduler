@@ -1,0 +1,183 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+    <link href="{% static 'registration/style.css' %}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+      /* Custom dropdown styles */
+      .dropdown-item:hover, .dropdown-item:focus {
+        background-color: transparent !important;
+      }
+      .dropdown-menu {
+        background-color: #333;
+        border: none;
+      }
+      .dropdown-item {
+        color: white !important;
+        padding: 0.5rem 1.5rem;
+      }
+      .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+      }
+      .dropdown-divider {
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .btn.dropdown-toggle:focus {
+        box-shadow: none !important;
+      }
+      /* Notification badge */
+      .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        font-size: 0.6rem;
+        padding: 2px 5px;
+      }
+      /* Notification dropdown styles */
+      .notification-dropdown {
+        width: 300px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .notification-item {
+        color: white;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .notification-item:last-child {
+        border-bottom: none;
+      }
+      .notification-item.unread {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      .notification-time {
+        font-size: 0.75rem;
+        color: #aaa;
+      }
+    </style>
+
+    <title>
+      {% block title %}{% endblock %}
+    </title>
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body class="d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #333; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold fs-4" href="/">StudySync</a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            {% if user.is_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 rounded" href="{% url 'study_sessions:methods' %}">
+                  <i class="bi bi-plus-circle"></i> Create Session
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 rounded" href="{% url 'modules' %}">
+                  <i class="bi bi-journal-bookmark"></i> My Modules
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 rounded" href="{% url 'upload_calendar' %}">
+                  <i class="bi bi-upload"></i> Upload
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+          
+          <div class="d-flex align-items-center gap-3">
+            {% if user.is_authenticated %}
+              <div class="dropdown me-2">
+                <a class="btn btn-dark position-relative" href="#" role="button" data-bs-toggle="dropdown" style="background-color: transparent !important; border: none !important;">
+                  <i class="bi bi-bell-fill"></i>
+                  {% if unread_count > 0 %}
+                    <span class="notification-badge badge bg-danger rounded-pill">{{ unread_count }}</span>
+                  {% endif %}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end notification-dropdown">
+                  <li><h6 class="dropdown-header">Notifications</h6></li>
+                  {% if notifications %}
+                    {% for notification in notifications %}
+                      <li class="notification-item {% if not notification.read %}unread{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div class="me-2">
+                            {{ notification.message }}
+                          </div>
+                          <form method="post" action="{% url 'mark_as_read' notification.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm p-0" style="color: #aaa;">
+                              <i class="bi bi-x"></i>
+                            </button>
+                          </form>
+                        </div>
+                        <div class="notification-time">{{ notification.timestamp|timesince }} ago</div>
+                      </li>
+                    {% endfor %}
+                    <li><a class="dropdown-item text-center" href="{% url 'notifications' %}">View all notifications</a></li>
+                  {% else %}
+                    <li class="notification-item text-center">No new notifications</li>
+                  {% endif %}
+                </ul>
+              </div>
+            {% endif %}
+            
+            <form class="d-flex me-2" method="get" action="{% url 'search_results' %}" autocomplete="off">
+              <div class="input-group">
+                <input class="form-control" type="text" name="q" placeholder="Search..." required>
+                <button class="btn btn-dark" type="submit">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </form>
+            
+            {% if user.is_authenticated %}
+              <div class="dropdown">
+                <a class="btn btn-dark dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" style="background-color: transparent !important; border: none !important;">
+                  <i class="bi bi-person-circle"></i> {{ user.username }}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="{% url 'profile' %}">
+                    <i class="bi bi-person"></i> Profile
+                  </a></li>
+                  <li><a class="dropdown-item" href="{% url 'friends_list' %}">
+                    <i class="bi bi-people"></i> Friends
+                  </a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <form id="logout-form" method="post" action="{% url 'logout' %}">
+                      {% csrf_token %}
+                      <button class="dropdown-item" type="submit" style="background-color: transparent; border: none; width: 100%; text-align: left;">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                      </button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            {% else %}
+              <a class="btn btn-dark" href="{% url 'login' %}">
+                <i class="bi bi-box-arrow-in-right"></i> Sign In
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container-fluid px-0 flex-grow-1">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

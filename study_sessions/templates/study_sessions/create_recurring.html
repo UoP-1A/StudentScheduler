@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+  <link href="{% static 'study_sessions/style.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h1>Create a Study Session</h1>
+    <form method="post" action="" class="recurring-session-form">
+        {% csrf_token %}
+        <div class="form-group">
+          <div>{{ form.recurrence_amount.errors }}</div>
+          <div>{{ form.recurrence_amount.label_tag }}</div>
+          <div>{{ form.recurrence_amount }}</div>
+        </div>
+        <input type="submit" class="submit_recurring_session" value="Create Recurring Session">
+      </form>
+  </div>
+
+{% endblock %}

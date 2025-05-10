@@ -1,0 +1,13 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'calendar/event_popup.css' %}" />
+
+<div id="event-modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2 id="event-title"></h2>
+    <p><strong>Type:</strong> <span id="event-type"></span></p>
+    <p><strong>Start:</strong> <span id="event-start"></span></p>
+    <p><strong>End:</strong> <span id="event-end"></span></p>
+    <p><strong>Description:</strong> <span id="event-description"></span></p>
+  </div>
+</div>

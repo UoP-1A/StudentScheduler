@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h2 class="card-title mb-0">Find Friends</h2>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6 offset-md-3">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search users..." id="userSearch">
+            <button class="btn btn-outline-secondary" type="button">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="list-group">
+        {% for user in users %}
+          <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <i class="bi bi-person-circle me-2"></i>
+              <span>{{ user.username }}</span>
+            </div>
+            <a href="{% url 'send_request' user.id %}" class="btn btn-primary btn-sm">
+              <i class="bi bi-person-plus me-1"></i> Send Friend Request
+            </a>
+          </div>
+        {% empty %}
+          <div class="text-center py-4">
+            <p class="text-muted">No users found</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Simple client-side filtering for the user search
+  document.getElementById('userSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    document.querySelectorAll('.list-group-item').forEach(item => {
+      const username = item.querySelector('span').textContent.toLowerCase();
+      if (username.includes(searchTerm)) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  });
+</script>
+{% endblock %}

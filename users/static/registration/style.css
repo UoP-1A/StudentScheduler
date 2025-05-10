@@ -1,0 +1,124 @@
+body {
+  overflow: auto;
+}
+
+/* Logout form styling (for navbar as it requires POST request) */
+#logout-form {
+  margin: 0;
+}
+  
+#logout-form button {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#logout-form button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Login form style */
+
+.login-container {
+  display: flex ;
+  justify-content: center ;
+  align-items: center ;
+  height: 100vh ;
+  background-color: #a69dc7 ;
+}
+
+.login-box {
+  background-color: #e2e2e2 ;
+  border-radius: 20px;
+  padding: 40px;
+  margin-top: -33vh;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  padding-bottom: 50px;
+}
+
+.login-form input[type="text"], 
+.login-form input[type="password"],
+.login-form input[type="submit"] {
+  padding: 10px;
+  border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-form input[type="submit"] {
+  font-weight: bold;
+  margin: 0 auto;
+}
+
+.login-h1 {
+  margin-top: -20px;
+  margin-bottom: 40px;
+}
+
+/* register page styling */
+
+#register-button{
+  transform: translateX(-21%);
+}
+
+/* Delete Account Page Style */
+
+/* Light red for a warning to user*/
+.delete-account-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f8d7da; 
+}
+
+.delete-account-box {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* danger color */
+.delete-account-h1 {
+  margin-bottom: 20px;
+  color: #dc3545; 
+}
+
+/* Is Danger color */
+.delete-submit {
+  background-color: #dc3545; 
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* Darker shade on hover */
+.delete-submit:hover {
+  background-color: #c82333;
+}
+
+.position-relative:hover .btn-light {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Form styling consistency */
+#pictureForm input[type="file"] {
+  padding: 0.375rem 0.75rem;
+}
+
+/* Modal button alignment */
+.modal-footer {
+  justify-content: space-between;
+}
