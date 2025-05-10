@@ -6,11 +6,25 @@
 
 <h3>Events:</h3>
 
-{% if results %}
+{% if event_results %}
 <ul>
-    {% for event in results %}
+    {% for event in event_results %}
     <li>
         {{ event.title }} | {{ event.start }}<br>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+    <p>No events found.</p>
+{% endif %}
+
+<h3>Study Sessions:</h3>
+
+{% if session_results %}
+<ul>
+    {% for session in session_results %}
+    <li>
+        {{ session.title }} | {{ session.start_time }}<br>
     </li>
     {% endfor %}
 </ul>

@@ -252,14 +252,18 @@ def delete_calendar(request, calendar_id):
 
 def search_results(request):
     query = request.GET.get('q')
-    results = []
+    event_results = []
+    session_results = []
 
     if query:
-        print(f"Search query: {query}")
         event_results = Event.objects.filter(
             Q(title__icontains=query) |
             Q(start__icontains=query)
         ).distinct()
-        results.extend(event_results)
-        print(f"Event results: {results}")
-    return render(request, 'search_results.html', {'query': query, 'results': results})
+
+        session_results = StudySession.objects.filter(
+            Q(title__icontains=query) |
+            Q(start_time__icontains=query)
+        ).distinct()
+
+    return render(request, 'search_results.html', {'query': query, 'event_results': event_results, 'session_results': session_results})
