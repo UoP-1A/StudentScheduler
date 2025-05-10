@@ -70,9 +70,9 @@ def create(request, automated=0):
                                         'end': str(end),
                                     }
                                     events.append(session_data)
-                                    print(session_data, "     ", item.get("type"))
+                                    #print(session_data, "     ", item.get("type"))
                                 else:
-                                    for i in range(rrule_count-1):
+                                    for i in range(rrule_count):
                                         start = datetime.fromisoformat(item.get('start'))
                                         end = datetime.fromisoformat(item.get('end'))
                                         start = start + timedelta(weeks=i)
@@ -82,7 +82,7 @@ def create(request, automated=0):
                                             'end': str(end),
                                         }
                                         events.append(session_data)
-                                        print(session_data, "     ", item.get("type"))
+                                        #print(session_data, "     ", item.get("type"))
                             else:
                                 start = datetime.fromisoformat(item.get('start'))
                                 end = datetime.fromisoformat(item.get('end'))
@@ -91,29 +91,37 @@ def create(request, automated=0):
                                     'end': str(end),
                                 }
                                 events.append(session_data)
-                                print(session_data, "     ", item.get("type"))
+                                #print(session_data, "     ", item.get("type"))
                             
                 #filter out events that aren't between now and the end of the week
                 #today = make_aware(datetime.combine(datetime.now().replace(day=7).date(), time(10, 0)),timezone=ZoneInfo("UTC"))
 
-                today = make_aware(datetime.now(), timezone=ZoneInfo("UTC"))
+                today = make_aware(datetime.now().replace(day=10), timezone=ZoneInfo("UTC"))
                 days_left_until_sat = (5 - today.weekday()) % 7
-                days_left_until_mon = (0 - today.weekday()) % 7
+                days_left_until_mon = 0
                 if days_left_until_sat == 0:
                     days_left_until_sat = 7
+                    days_left_until_mon = 2
+                elif days_left_until_sat == 6:
+                    days_left_until_mon = 1
+                else:
+                    days_left_until_mon = 0
                 end_of_week = (today + timedelta(days=days_left_until_sat)).replace(hour=0, minute=0, second=0, microsecond=0)
-                if days_left_until_mon == 0:
-                    days_left_until_mon = 7
-                start_of_week = (today + timedelta(days=days_left_until_mon)).replace(hour=0, minute=0, second=0, microsecond=0)
+                
+                start_of_week = today
+                if days_left_until_mon != 0:
+                    start_of_week = (today + timedelta(days=days_left_until_mon)).replace(hour=0, minute=0, second=0, microsecond=0)
 
                 print("start of week(", start_of_week, ") end of week(", end_of_week , ") - day now (", today , ") days left until sat:", days_left_until_sat, "days left until mon:", days_left_until_mon)
                 events_left_this_week = []
                 for event in events:
                     event_start = datetime.fromisoformat(event['start'])
                     if event_start < end_of_week:
-                        if (event_start >= today) and (event_start >= start_of_week):
-                            events_left_this_week.append(event)
-
+                        if (event_start >= today):
+                            if (event_start >= start_of_week):
+                                events_left_this_week.append(event)
+                for event in events_left_this_week:
+                    print("EVENT", event)
                 #create a list of events for each day of the week
                 week_of_events = []
                 for i in range(days_left_until_mon, days_left_until_sat+1):
@@ -124,6 +132,9 @@ def create(request, automated=0):
                         if event_start.date() == (today + timedelta(days=i)).date():
                             day_of_events.append(event)
                     week_of_events.append(day_of_events)
+                
+                for day in week_of_events:
+                    print("DAY:", day)
 
                 #find how many hours are used up for each day of the week
                 hours_per_day = []
@@ -132,6 +143,7 @@ def create(request, automated=0):
                     for event in day_of_events:
                         hours += round((datetime.fromisoformat(event['end']) - datetime.fromisoformat(event['start'])).seconds / 3600)
                     hours_per_day.append(hours)
+                print("HOURS PER DAY", hours_per_day)
 
 
 
@@ -173,7 +185,7 @@ def create(request, automated=0):
                             hours_between_each_event.append(hours)
 
                     duration = 1
-                    timezone_offset = -1 # this is a placeholder, the calendar is being weird
+                    timezone_offset = 0 # this is a placeholder, the calendar is being weird
                     auto_date = datetime.now()
 
                     #find a decent gap between the events to put the new session in
@@ -207,11 +219,15 @@ def create(request, automated=0):
 
                     #if no gaps were found, create the session either before or after the events
                     if not session_created:
-                        before_event = timedelta(9)
-                        after_event = timedelta(9)
+                        before_event = timedelta(0)
+                        after_event = timedelta(0)
+                        print("RIGHT HEREEEEEEEEEEEE", datetime.fromisoformat(day_of_events[0]['start']), " ", datetime.fromisoformat(day_of_events[0]['start']).replace(hour=9, minute=0, second=0, microsecond=0))
                         if (datetime.fromisoformat(day_of_events[0]['start']) - datetime.fromisoformat(day_of_events[0]['start']).replace(hour=9, minute=0, second=0, microsecond=0)).total_seconds()/3600 >= 2.0:
+                            print("before")
                             before_event = datetime.fromisoformat(day_of_events[0]['start']) - datetime.fromisoformat(day_of_events[0]['start']).replace(hour=9, minute=0, second=0, microsecond=0)
+                        print("RIGHT HEREEEEEEEEEEEE", datetime.fromisoformat(day_of_events[-1]['end']).replace(hour=18, minute=0, second=0, microsecond=0), " ", datetime.fromisoformat(day_of_events[-1]['end']))
                         if (datetime.fromisoformat(day_of_events[-1]['end']).replace(hour=18, minute=0, second=0, microsecond=0) - datetime.fromisoformat(day_of_events[-1]['end'])).total_seconds()/3600 >= 2.0:
+                            print("after")
                             after_event = datetime.fromisoformat(day_of_events[-1]['end']).replace(hour=18, minute=0, second=0, microsecond=0) - datetime.fromisoformat(day_of_events[-1]['end'])
 
                         #put session either before or after depending on which gap is bigger
