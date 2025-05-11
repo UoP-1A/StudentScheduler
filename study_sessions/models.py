@@ -21,8 +21,9 @@ class StudySession(models.Model):
     def clean(self):
        """AWdd validation for time and date logic"""
        # Time validation
-       if self.end_time <= self.start_time:
-           raise ValidationError("End time must be after start time")
+       if self.end_time != None:
+        if self.end_time <= self.start_time:
+            raise ValidationError("End time must be after start time")
 
     def save(self, *args, **kwargs):
         self.full_clean()
