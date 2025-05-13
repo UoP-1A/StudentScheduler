@@ -47,11 +47,21 @@
     cursor: default;
 }
 
-/* ✅ Fix: Restore background styling for events in month view */
-.fc-daygrid-event {
-    background-color: #3788d8 !important; /* Or any theme color */
-    color: white !important;
+/* Default event styling (for Event model) */
+.fc-event {
+    background-color: #3788d8 !important; /* Blue for Event */
     border: 1px solid #2c6ebd !important;
+}
+
+/* Study session styling */
+.fc-event[data-model="StudySession"] {
+    background-color: #e74c3c !important; /* Nice green for Study */
+    border: 1px solid #c0392b !important;
+}
+
+/* Common event styles */
+.fc-daygrid-event, .fc-timegrid-event {
+    color: white !important;
     border-radius: 4px;
     padding: 1px 4px;
     font-weight: 500;

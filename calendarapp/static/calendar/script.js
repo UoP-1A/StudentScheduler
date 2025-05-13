@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   calendar = new FullCalendar.Calendar(calendarDiv, {
     initialView: "timeGridWeek",
-    timeZone: "UTC",
     eventSources: [
       'get-calendar',
       '/study_sessions/sessions/',

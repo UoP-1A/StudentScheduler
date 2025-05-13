@@ -711,141 +711,261 @@ Troubleshooting Tips
 
 If you encounter persistent issues, contact StudySync support for assistance.
 
-
 Study Sessions
 ================
 
 Overview
 --------
 
-The Study Sessions feature in StudySync enables users to create, join, and manage collaborative study events. Designed to foster academic teamwork and effective time management, it supports both one-time and recurring sessions, participant management, and seamless integration with the calendar system. This section is highly user-focused, guiding students through the process of organising and participating in group study activities.
+The Study Sessions feature in StudySync enables users to create, join, and manage collaborative study events. It supports both single and recurring sessions, participant management, and integrates tightly with the calendar system to help students organize their academic life and collaborate effectively.
 
-Usage
-----------
+Models
+------
 
-With Study Sessions, users can:
+StudySession
+-------------
 
-- **Create new study sessions** for specific dates and times, including a title and description.
-- **Set up recurring sessions** for ongoing study groups or regular meetings.
-- **Invite friends or other users** to participate in sessions.
-- **View all sessions they are hosting or participating in** directly from their dashboard or calendar.
-- **Automatically integrate sessions with their calendar**, ensuring reminders and scheduling are in sync.
-
-**How to Use:**
-
-1. **Create a Session:**  
-   Go to the study sessions page and fill out the form with details such as title, description, date, start and end time, and participants. You can also mark the session as recurring if needed.
-
-2. **Add Participants:**  
-   Invite friends or group members to join the session. The system ensures that each user can only join a session once.
-
-3. **View Sessions:**  
-   Access all your upcoming and past sessions, including those you host and those you participate in.
-
-4. **Recurring Sessions:**  
-   For sessions that repeat (e.g., weekly study groups), specify the recurrence amount and manage all occurrences easily.
+.. image:: calendar_with_studysesson..jpeg
+   :width: 500
+   :alt: calendar with study session
 
 .. code-block:: python
 
-   # Example: Creating a study session
-   form = StudySessionForm(request.POST or None)
-   if form.is_valid():
-       study_session = form.save(commit=False)
-       study_session.host = request.user
-       study_session.save()
-       participants = form.cleaned_data.get('participants', [])
-       for participant in participants:
-           StudySessionParticipant.objects.get_or_create(
-               study_session=study_session,
-               participant=participant
+   class StudySession(models.Model):
+       host = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="study_sessions")
+       title = models.CharField(max_length=255)
+       description = models.TextField(blank=True)
+       start_time = models.TimeField()
+       end_time = models.TimeField()
+       date = models.DateField()
+       is_recurring = models.BooleanField(default=False)
+       calendar_id = models.ForeignKey(Calendar, on_delete=models.CASCADE, related_name="study_sessions")
+
+       def __str__(self):
+           return f"{self.host.username} - {self.title}"
+
+       def clean(self):
+           """Validate that the end time is after the start time."""
+           if self.end_time <= self.start_time:
+               raise ValidationError("End time must be after start time")
+
+       def save(self, *args, **kwargs):
+           self.full_clean()
+           super().save(*args, **kwargs)
+
+**Usage:**  
+Represents a single or recurring study session hosted by a user. Each session has a title, description, date, time, and is linked to a calendar. Users can create sessions for themselves or for groups.
+
+**Maintenance:**  
+Validation is enforced in the `clean` method to prevent invalid time ranges. The `save` method ensures that all data is validated before saving. Changes to time or recurrence logic must be reflected in these methods.
+
+RecurringStudySession
+--------------
+
+.. code-block:: python
+
+   class RecurringStudySession(models.Model):
+       session_id = models.ForeignKey(StudySession, on_delete=models.CASCADE, related_name="recurring_sessions")
+       recurrence_amount = models.PositiveIntegerField()
+
+       def clean(self):
+           """Ensure recurrence_amount is positive."""
+           if self.recurrence_amount is not None and self.recurrence_amount <= 0:
+               raise ValidationError("Recurrence amount must be a positive number")
+
+       def save(self, *args, **kwargs):
+           self.full_clean()
+           super().save(*args, **kwargs)
+
+       def __str__(self):
+           return f"{self.session_id.host.username} - {self.session_id.title} x {self.recurrence_amount}"
+
+**Usage:**  
+Tracks how many times a session should recur. Useful for weekly study groups or repeating events.
+
+**Maintenance:**  
+Always validate recurrence amounts. If recurrence logic changes (e.g., supporting monthly recurrence), update this model accordingly.
+
+StudySessionParticipant
+-------------
+
+.. code-block:: python
+
+   class StudySessionParticipant(models.Model):
+       study_session = models.ForeignKey(
+           StudySession, 
+           on_delete=models.CASCADE,
+           related_name="participants_set"
+       )
+       participant = models.ForeignKey(
+           CustomUser,
+           on_delete=models.CASCADE,
+           related_name="study_sessions_participated"
+       )
+
+       class Meta:
+           constraints = [
+               models.UniqueConstraint(
+                   fields=['study_session', 'participant'],
+                   name='unique_participation'
+               )
+           ]
+
+       def __str__(self):
+           return f"{self.participant.username} - {self.study_session.title}"
+
+       def clean(self):
+           """Prevent duplicate participation."""
+           existing = StudySessionParticipant.objects.filter(
+               study_session=self.study_session,
+               participant=self.participant
            )
+           if self.pk:
+               existing = existing.exclude(pk=self.pk)
+           if existing.exists():
+               raise ValidationError("This user is already participating in this session")
 
-   # Example: Creating a recurring session
-   recurring_session = RecurringStudySession.objects.create(
-       session_id=study_session,
-       recurrence_amount=5
-   )
+       def save(self, *args, **kwargs):
+           if not self.pk:
+               self.full_clean()
+           super().save(*args, **kwargs)
 
-Maintenance
-----------------
+**Usage:**  
+Links users to sessions they are participating in. Ensures a user cannot join the same session multiple times.
 
-Maintaining the Study Sessions feature involves:
+**Maintenance:**  
+Unique constraints and validation prevent duplicates. If participant logic changes (e.g., adding roles), update this model.
 
-- **Validating session times and recurrence:**  
-  The system checks that end times are after start times and that recurrence amounts are positive.
-- **Ensuring unique participation:**  
-  Users cannot join the same session multiple times, enforced both in the database and in the application logic.
-- **Synchronising with the calendar:**  
-  All sessions are linked to the user's calendar, and recurring sessions generate appropriate rules for calendar integration.
-- **Updating forms and templates:**  
-  As the study session model evolves, forms and templates should be updated to reflect new fields or validation rules.
-- **Testing permission checks:**  
-  Only session hosts can create or edit recurring sessions, and only participants or hosts can view session details.
+Views
+-----
 
-Concrete Examples
-----------------
-
-**Example 1: Creating a One-Time Study Session**
-
-A user wants to set up a one-time group study for an upcoming exam:
+Createing a Session
+-----------
 
 .. code-block:: python
 
+   @login_required
+   @csrf_exempt
+   def create(request):
+       form = StudySessionForm(request.POST or None)
+       if request.method == 'POST' and form.is_valid():
+           study_session = form.save(commit=False)
+           study_session.host = request.user
+           study_session.save()
+           participants = form.cleaned_data.get('participants', [])
+           for participant in participants:
+               StudySessionParticipant.objects.get_or_create(
+                   study_session=study_session,
+                   participant=participant
+               )
+           if study_session.is_recurring:
+               return redirect('create_recurring', session_id=study_session.id)
+           return redirect('./')
+       return render(request, 'study_sessions/create.html', {'form': form})
+
+**Usage:**  
+Allows users to create a new study session and invite participants. If the session is recurring, redirects to a form for specifying recurrence.
+
+**Maintenance:**  
+Keep form fields and validation in sync with the StudySession model. Ensure participant logic is robust.
+
+Create Recurring Session
+---------------
+
+.. code-block:: python
+
+   @login_required
+   def create_recurring(request, session_id):
+       session = get_object_or_404(StudySession, id=session_id)
+       if session.host != request.user:
+           raise PermissionDenied
+       if not session.is_recurring:
+           return HttpResponseBadRequest("Session must be marked as recurring")
+       if request.method == 'POST':
+           form = RecurringSessionForm(request.POST)
+           if form.is_valid():
+               recurring_session = form.save(commit=False)
+               recurring_session.session_id = session
+               recurring_session.save()
+               return redirect('index')
+       else:
+           form = RecurringSessionForm()
+       return render(request, 'study_sessions/create_recurring.html', {
+           'form': form,
+           'session': session
+       })
+
+**Usage:**  
+After creating a recurring session, the host sets how many times it should repeat.
+
+**Maintenance:**  
+Ensure only the host can set recurrence. Update form and view if recurrence options expand.
+
+**Usage:**  
+Returns all sessions a user is hosting or participating in, formatted for calendar display.
+
+**Maintenance:**  
+Update logic if session types or recurrence rules change. Ensure timezone handling is correct.
+
+Get Recurring Sessions
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+   @login_required
+   def get_recurring_sessions(request):
+       sessions = RecurringStudySession.objects.all()
+       sessions_list = []
+       for session in sessions:
+           sessions_list.append({
+               'id': session.id,
+               'recurrence_amount': session.recurrence_amount,
+               'session_id': session.session_id.id,
+           })
+       return JsonResponse(sessions_list, safe=False)
+
+**Usage:**  
+Returns all recurring study sessions for further processing or display.
+
+**Maintenance:**  
+Keep in sync with RecurringStudySession model changes.
+
+Concrete Example
+----------------
+
+Suppose Alice wants to create a weekly study session for "Linear Algebra" every Tuesday at 5pm for 4 weeks, inviting Bob and Carol:
+
+.. code-block:: python
+
+   # Create the session
    session = StudySession.objects.create(
-       host=request.user,
-       title="Physics Exam Review",
-       description="Go over past papers and key concepts",
-       date=date(2025, 5, 15),
+       host=alice,
+       title="Linear Algebra Weekly Study",
+       date=date(2025, 5, 13),
        start_time=time(17, 0),
        end_time=time(19, 0),
-       calendar_id=my_calendar,
-   )
-
-**Example 2: Creating and Managing a Recurring Session**
-
-A user sets up a weekly math study group for 4 weeks:
-
-.. code-block:: python
-
-   session = StudySession.objects.create(
-       host=request.user,
-       title="Weekly Math Study",
-       description="Meet every week to review homework",
-       date=date(2025, 5, 10),
-       start_time=time(16, 0),
-       end_time=time(18, 0),
        is_recurring=True,
-       calendar_id=my_calendar,
+       calendar_id=alice_calendar,
    )
+   # Set recurrence
    RecurringStudySession.objects.create(
        session_id=session,
        recurrence_amount=4
    )
+   # Add participants
+   StudySessionParticipant.objects.create(study_session=session, participant=bob)
+   StudySessionParticipant.objects.create(study_session=session, participant=carol)
 
-**Example 3: Adding Participants**
+Alice, Bob, and Carol will see these sessions in their calendars, and the system will prevent duplicate participation.
 
-.. code-block:: python
+Troubleshooting
+---------------
 
-   StudySessionParticipant.objects.create(
-       study_session=session,
-       participant=another_user
-   )
-
-Troubleshooting Tips
------------------
-
-- **Cannot create a session:**  
-  Ensure the end time is after the start time and all required fields are filled in.
-- **Error when adding participants:**  
-  Check that the user is not already a participant in the session.
-- **Recurring session not saving:**  
-  Make sure the recurrence amount is a positive integer and the session is marked as recurring.
-- **Sessions not appearing in calendar:**  
-  Confirm that the session is linked to the correct calendar and that your dashboard is refreshed.
-- **Permission denied:**  
-  Only the session host can create or edit recurring sessions.
-
-If you encounter persistent issues, contact StudySync support or refer to the FAQ for further guidance.
+- **Cannot create a session:** Ensure the end time is after the start time and all required fields are filled.
+- **Duplicate participation error:** User is already added to the session.
+- **Recurring session issues:** Recurrence amount must be a positive number and session must be marked as recurring.
+- **Permission denied:** Only the session host can modify recurrence.
+- **Sessions not showing:** Check calendar integration and user participation.
 
 
 Additional Links
