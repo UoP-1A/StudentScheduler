@@ -8,13 +8,15 @@
 
 {% if event_results %}
 <p>Events Results Count: {{event_results_count}}</p>
+
+{% for event in event_results %}
+<h5>{{ event.title|slice:60 }}{% if event.title|length > 60 %}...{% endif %}</h5>
 <ul>
-    {% for event in event_results %}
-    <li>
-        {{ event.title }} | {{ event.start }}<br>
-    </li>
-    {% endfor %}
+    <li>Time: {{ event.start }} - {{ event.end }}<br></li>
+    <li>Description: {{ event.description }}</li>
 </ul>
+{% endfor %}
+
 {% else %}
     <p>No events found.</p>
 {% endif %}
@@ -23,13 +25,16 @@
 
 {% if session_results %}
 <p>Events Results Count: {{session_results_count}}</p>
+
+{% for session in session_results %}
+<h5>{{ session.title|slice:60 }}{% if session.title|length > 60 %}...{% endif %}</h5>
 <ul>
-    {% for session in session_results %}
-    <li>
-        {{ session.title }} | {{ session.start_time }}<br>
-    </li>
-    {% endfor %}
+    <li>Time: {{ session.date }} {{ session.start_time }} - {{ session.end_time }}</li>
+    <li>Host: {{ session.host }}</li>
+    <li>Description: {{ session.description }}</li>
 </ul>
+{% endfor %}
+
 {% else %}
     <p>No events found.</p>
 {% endif %}

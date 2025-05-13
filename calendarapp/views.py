@@ -258,11 +258,13 @@ def search_results(request):
         print(f"Search query: {query}")
 
         event_results = Event.objects.filter(
-            Q(title__icontains=query)
+            Q(title__icontains=query) | 
+            Q(start__icontains=query)
         ).distinct().order_by('-start')
 
         session_results = StudySession.objects.filter(
-            Q(title__icontains=query)        
+            Q(title__icontains=query) | 
+            Q(start_time__icontains=query)       
         ).distinct().order_by('-start_time')
 
         print(f"Event results: {event_results}")
