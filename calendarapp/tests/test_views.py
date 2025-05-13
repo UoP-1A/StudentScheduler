@@ -699,3 +699,9 @@ class SearchResultsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['event_results']), 1)
         self.assertEqual(len(response.context['session_results']), 0)
+        
+    def test_search_results_requires_login(self):
+        """Test that search results view requires authentication"""
+        response = self.client.get(self.url + '?q=Math')
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+        self.assertTrue(response.url.startswith(reverse('login')))
