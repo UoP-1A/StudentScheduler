@@ -325,8 +325,8 @@ class GetSessionsViewTests(TestCase):
         
         # Verify datetime formatting
         math_session = next(s for s in sessions if s['title'] == 'Math Study')
-        start_datetime = datetime.strptime(math_session['start'], '%Y-%m-%dT%H:%M:%S%z')
-        end_datetime = datetime.strptime(math_session['end'], '%Y-%m-%dT%H:%M:%S%z')
+        start_datetime = datetime.strptime(math_session['start'], '%Y-%m-%dT%H:%M:%S')
+        end_datetime = datetime.strptime(math_session['end'], '%Y-%m-%dT%H:%M:%S')
         
         # Verify duration calculation
         expected_duration = str(end_datetime - start_datetime)
