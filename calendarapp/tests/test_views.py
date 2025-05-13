@@ -1,6 +1,6 @@
 import json
 
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, Client
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -14,6 +14,7 @@ from rest_framework.test import APIRequestFactory
 
 from calendarapp.views import delete_calendar
 from calendarapp.models import Calendar, Event
+from study_sessions.models import StudySession
 
 CustomUser = get_user_model()
 
@@ -617,3 +618,90 @@ class DeleteCalendarViewTests(TestCase):
         # Calendar should still exist
         calendar = Calendar.objects.get(id=self.calendar.id)
         self.assertEqual(calendar.name, 'Test Calendar')
+        
+class SearchResultsViewTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.client = Client()
+        self.user = CustomUser.objects.create_user(
+            username='testuser',
+            password='testpassword'
+        )
+        self.calendar = Calendar.objects.create(user=self.user, name='Test User')  # Create a single calendar
+
+        self.event1 = Event.objects.create(
+            title="Math Lecture",
+            start=make_aware(datetime(2025, 5, 15, 10, 0)),
+            calendar=self.calendar
+        )
+        self.event2 = Event.objects.create(
+            title="Science Workshop",
+            start=make_aware(datetime(2025, 5, 16, 12, 0)),
+            calendar=self.calendar
+        )
+        self.session1 = StudySession.objects.create(
+            title="Study Group - Software Engineering",
+            start_time=make_aware(datetime(2025, 5, 17, 15, 0)).time(),
+            end_time=make_aware(datetime(2025, 5, 17, 17, 0)).time(),
+            date=make_aware(datetime(2025, 5, 17)).date(),
+            calendar_id=self.calendar, 
+            host=self.user
+        )
+        self.url = reverse('search_results')
+
+    def test_search_results_no_input(self):
+        """Test search results without input (should return empty results)"""
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'search_results.html')
+        self.assertIsNone(response.context['query'])
+        self.assertEqual(len(response.context['event_results']), 0)
+        self.assertEqual(len(response.context['session_results']), 0)
+
+    def test_search_results_valid_query(self):
+        """Test search results with a valid query (should match events and sessions)"""
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(self.url + '?q=Math')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['query'], "Math")
+        self.assertEqual(len(response.context['event_results']), 1)
+        self.assertEqual(len(response.context['session_results']), 0)
+
+    def test_search_results_non_matching_query(self):
+        """Test search results with a non-matching query (should return empty results)"""
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(self.url + '?q=History')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['event_results']), 0)
+        self.assertEqual(len(response.context['session_results']), 0)
+
+    def test_search_results_partial_query(self):
+        """Test search results with a partial query (should match relevant results)"""
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(self.url + '?q=Study')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['session_results']), 1)
+        self.assertEqual(len(response.context['event_results']), 0)
+
+    def test_search_results_case_insensitive(self):
+        """Test search results are case-insensitive"""
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(self.url + '?q=math')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['event_results']), 1)
+        self.assertEqual(len(response.context['session_results']), 0)
+
+    def test_search_results_date_query(self):
+        """Test search results using date as query (should match date results)"""
+        self.client.login(username='testuser', password='testpassword')
+        response = self.client.get(self.url + '?q=2025-05-15')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['event_results']), 1)
+        self.assertEqual(len(response.context['session_results']), 0)
+        
+    def test_search_results_requires_login(self):
+        """Test that search results view requires authentication"""
+        response = self.client.get(self.url + '?q=Math')
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+        self.assertTrue(response.url.startswith(reverse('login')))

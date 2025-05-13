@@ -250,6 +250,7 @@ def delete_calendar(request, calendar_id):
 
     return redirect("profile")
 
+@login_required
 def search_results(request):
     query = request.GET.get('q')
 
