@@ -4,7 +4,7 @@ StudySync documentation!
 
 Welcome to StudySync documentation.
 
-StudySync is a collaborative web application designed to transform the way students connect, study, and succeed together. Unlike traditional study groups or generic messaging platforms, StudySync provides a structured, scalable environment tailored specifically for academic collaboration. The platform makes it easy to find or create study groups based on courses, availability, and preferred study methods-removing the friction from group formation and scheduling.
+StudySync is a collaborative web application designed to transform the way students connect, study, and succeed together. Unlike traditional study groups or generic messaging platforms, StudySync provides a structured, scalable environment tailored specifically for academic collaboration.
 
 
 Login and Accounts
@@ -15,7 +15,7 @@ Login and Accounts
 Overview
 --------
 
-This module provides user authentication and account management for StudySync. It uses Django's authentication system, custom forms, and session management to ensure a secure and user-friendly experience. The design emphasises both ease of use and protection against accidental or unauthorised actions.
+This app provides user authentication and account management for StudySync. It uses Django's authentication system, custom forms, and session management to ensure a secure and user-friendly experience. The design emphasises both ease of use and protection against accidental or unauthorised actions.
 
 Usage
 -----------
@@ -29,8 +29,8 @@ Registration allows new users to create an account on StudySync. The process is 
    :width: 500
    :alt: Registration Page
 
-- Users register via the ``/register/`` page.
-- Registration uses a custom form (``RegisterForm``). On success, the user is redirected to the home page.
+- Users register via the register page.
+- Registration uses a custom form (RegisterForm). On success, the user is redirected to the home page.
 
 .. code-block:: python
 
@@ -65,7 +65,7 @@ Log In Options:
    * Log in using GitHub
    * Log in using Google
 
-- Users log in via a custom login page (``CustomLoginView``) with optional "remember me" functionality.
+- Users log in via a custom login page (CustomLoginView) with optional "remember me" functionality.
 
 Logout
 ----------------
@@ -104,7 +104,7 @@ The profile page provides access to user-specific features and settings. Account
    :width: 500
    :alt: Profile Page
 
-- Users can view their profile at ``/profile/``.
+- Users can view their profile at (profile).
 - Users can view their calendar if they have one linked.
 - Users have access to "Create Session", "My Modules", "Upload" and "Log out" for seamless navigation.
 
@@ -148,20 +148,10 @@ Account deletion is protected by session-based navigation. Users must visit both
          return redirect(to="/")
       return redirect(to="/profile")
 
-Troubleshooting
----------------
-
-This section provides solutions for common issues users or maintainers might encounter. Regularly updating troubleshooting steps ensures smooth operation and helps new maintainers quickly resolve user problems.
-
-- If account deletion redirects unexpectedly, ensure session flags are being set correctly by visiting the profile and confirmation pages in order.
-- If friend requests are not appearing, check for duplicate requests or incorrect user IDs.
-- For login issues, verify that the custom login form inherits from Django's ``AuthenticationForm`` and includes the "remember me" field.
-
-
 Social
 =========
 
-The social features in StudySync enable users to connect, collaborate, and build academic communities. Maintenance focuses on ensuring data integrity (e.g., no duplicate requests) and keeping the user experience smooth as the user base grows.
+The social features in StudySync enable users to connect, collaborate. Maintenance focuses on ensuring data integrity (e.g., no duplicate requests) and keeping the user experience smooth as the user base grows.
 
 Friend Requests
 ---------------
@@ -511,21 +501,6 @@ Delete a grade from a module if it was entered incorrectly or is no longer relev
 **Maintenance:**  
 Ensure grade deletion does not affect the module’s integrity or overall grade calculation.
 
-Concrete Example
----------------
-
-Suppose a user wants to add a new module called "Mathematics" with 20 credits, then add two grades: "Midterm" (mark: 70, weight: 40) and "Final" (mark: 80, weight: 60). The system will calculate the overall grade as:
-
-.. code-block:: python
-
-   # Example Calculation
-   module = Module.objects.create(user=user, name="Mathematics", credits=20)
-   Grade.objects.create(module=module, name="Midterm", mark=70, weight=40)
-   Grade.objects.create(module=module, name="Final", mark=80, weight=60)
-   print(module.overall_grade())  
-
-This demonstrates weighted average calculation and validation of grade weights.
-
 
 Calendar
 ================
@@ -544,7 +519,7 @@ Usage
 
 The Calendar allows users to:
 
-- **Create, view, and edit study sessions and academic events** directly from their dashboard.
+- **Create, view, and edit study sessions** directly from their dashboard.
 - **Link events to specific modules or courses** for better organisation.
 - **Invite friends or study group members** to shared events, making collaborative planning seamless.
 - **Receive reminders and notifications** for upcoming sessions, helping users stay on track.
@@ -569,38 +544,6 @@ Maintaining the Calendar involves:
 - **Updating the interface and features** based on user feedback and academic calendar changes.
 
 Regular testing and updates are performed to ensure the Calendar remains accurate, user-friendly, and responsive to the needs of the StudySync community.
-
-Concrete Examples
-------------
-
-**Example 1: Scheduling a Study Session**
-
-A user wants to organise a group study session for their "Calculus" module:
-
-.. code-block:: python
-
-   # Creating a study session event
-   event = StudySession.objects.create(
-       user=request.user,
-       module=module_instance,
-       title="Group Study for Calculus",
-       start_time=datetime(2025, 5, 10, 15, 0),
-       end_time=datetime(2025, 5, 10, 17, 0),
-       description="Review chapters 3 and 4",
-   )
-   event.invite_friends(friend_list)
-
-**Example 2: Receiving Reminders**
-
-- The user and invited friends receive notifications before the session starts, ensuring everyone is prepared and on time.
-
-Troubleshooting Tips
-------------------
-
-- **Events not appearing?** Refresh the page or check your internet connection.
-- **Time zone issues?** Confirm your account settings reflect your current location.
-- **Missing notifications?** Ensure notifications are enabled in your account preferences and device settings.
-- **Unable to edit or delete an event?** Verify that you are the event creator or have the necessary permissions.
 
 
 Notifications
