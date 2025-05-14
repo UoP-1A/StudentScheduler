@@ -57,3 +57,4 @@ class Event(models.Model):
         self.full_clean()
 
         super().save(*args, **kwargs)
+        

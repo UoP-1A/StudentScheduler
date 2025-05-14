@@ -2,34 +2,80 @@
 {% load static %}
 {% block title %} Search Results {% endblock title%}
 {% block content %}
-<h2>Results for "{{ query }}"</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">Results for "{{ query }}"</h2>
 
-<h3>Events:</h3>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Events</h3>
+        </div>
+        <div class="card-body">
+            {% if event_results %}
+            <p class="text-muted">Found {{event_results_count}} event{{ event_results_count|pluralize }}</p>
+            
+            <div class="row">
+                {% for event in event_results %}
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ event.title|truncatechars:60 }}</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Time:</strong> {{ event.start }} - {{ event.end }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Description:</strong> 
+                                    <p class="card-text">{{ event.description|truncatewords:30 }}</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% else %}
+                <div class="alert alert-info">No events found.</div>
+            {% endif %}
+        </div>
+    </div>
 
-{% if event_results %}
-<ul>
-    {% for event in event_results %}
-    <li>
-        {{ event.title }} | {{ event.start }}<br>
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-    <p>No events found.</p>
-{% endif %}
-
-<h3>Study Sessions:</h3>
-
-{% if session_results %}
-<ul>
-    {% for session in session_results %}
-    <li>
-        {{ session.title }} | {{ session.start_time }}<br>
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-    <p>No events found.</p>
-{% endif %}
-
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #e74c3c; color: white;">
+            <h3 class="mb-0">Study Sessions</h3>
+        </div>
+        <div class="card-body">
+            {% if session_results %}
+            <p class="text-muted">Found {{session_results_count}} session{{ session_results_count|pluralize }}</p>
+            
+            <div class="row">
+                {% for session in session_results %}
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ session.title|truncatechars:60 }}</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Time:</strong> {{ session.date }} {{ session.start_time }} - {{ session.end_time }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Host:</strong> {{ session.host }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Description:</strong> 
+                                    <p class="card-text">{{ session.description|truncatewords:30 }}</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% else %}
+                <div class="alert alert-info">No study sessions found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock content %}

@@ -7,7 +7,8 @@ from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.dateparse import parse_datetime
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Q, Min
+from django.utils.timezone import datetime, is_naive, make_aware
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
@@ -20,6 +21,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
+from dateutil.rrule import rrulestr
+from datetime import timedelta
 
 # Create your views here.
 def index(request):
@@ -250,20 +253,54 @@ def delete_calendar(request, calendar_id):
 
     return redirect("profile")
 
+@login_required
 def search_results(request):
     query = request.GET.get('q')
-    event_results = []
+    combined_results = []
     session_results = []
 
     if query:
+
         event_results = Event.objects.filter(
-            Q(title__icontains=query) |
-            Q(start__icontains=query)
-        ).distinct()
+            Q(title__icontains=query) | 
+            Q(start__icontains=query) |
+            Q(description__icontains=query)
+        ).distinct().order_by('-start')
+
+        recurring_events = []
+
+        now_time = datetime.now() - timedelta(days=365)
+        oneYear = datetime.now()
+
+        for event in Event.objects.exclude(rrule__isnull=True).exclude(rrule=""):
+            rule = rrulestr(event.rrule, dtstart=event.start)
+            occurrences = list(rule.between(now_time, oneYear, inc=True))
+
+            for occurrence in occurrences:
+                if query.lower() in event.title.lower() or query.lower() in event.description.lower():
+                    recurring_events.append({
+                        'id': event.id,
+                        'title': event.title,
+                        'start': occurrence,
+                        'end': occurrence + (event.end - event.start),
+                        'description': event.description
+                    })
+
+        combined_results = list(event_results.values('id', 'title', 'start', 'end', 'description'))
+        combined_results.extend(recurring_events) 
+
 
         session_results = StudySession.objects.filter(
-            Q(title__icontains=query) |
-            Q(start_time__icontains=query)
-        ).distinct()
+            Q(title__icontains=query) | 
+            Q(start_time__icontains=query)       
+        ).distinct().order_by('-start_time')
 
-    return render(request, 'search_results.html', {'query': query, 'event_results': event_results, 'session_results': session_results})
+
+    return render(request, 'search_results.html', {
+        'query': query, 
+        'event_results': combined_results, 
+        'session_results': session_results, 
+        'event_results_count': len(combined_results), 
+        'session_results_count': len(session_results)
+    })
+
