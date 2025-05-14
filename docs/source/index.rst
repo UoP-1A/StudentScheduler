@@ -958,14 +958,79 @@ Suppose Alice wants to create a weekly study session for "Linear Algebra" every 
 
 Alice, Bob, and Carol will see these sessions in their calendars, and the system will prevent duplicate participation.
 
-Troubleshooting
----------------
+Search Bar
+==========
 
-- **Cannot create a session:** Ensure the end time is after the start time and all required fields are filled.
-- **Duplicate participation error:** User is already added to the session.
-- **Recurring session issues:** Recurrence amount must be a positive number and session must be marked as recurring.
-- **Permission denied:** Only the session host can modify recurrence.
-- **Sessions not showing:** Check calendar integration and user participation.
+Overview
+--------
+
+The Search Bar feature in StudySync allows users to quickly find events and study sessions by keyword. It provides a unified, user-friendly search experience across both one-time and recurring events, helping users stay organised and easily locate relevant academic activities.
+
+View: search_results
+--------------------
+
+.. code-block:: python
+
+   @login_required
+   def search_results(request):
+       query = request.GET.get('q')
+       combined_results = []
+       session_results = []
+
+       if query:
+           event_results = Event.objects.filter(
+               Q(title__icontains=query) | 
+               Q(start__icontains=query) |
+               Q(description__icontains=query)
+           ).distinct().order_by('-start')
+
+           recurring_events = []
+
+           now_time = datetime.now() - timedelta(days=365)
+           oneYear = datetime.now()
+
+           for event in Event.objects.exclude(rrule__isnull=True).exclude(rrule=""):
+               rule = rrulestr(event.rrule, dtstart=event.start)
+               occurrences = list(rule.between(now_time, oneYear, inc=True))
+
+               for occurrence in occurrences:
+                   if query.lower() in event.title.lower() or query.lower() in event.description.lower():
+                       recurring_events.append({
+                           'id': event.id,
+                           'title': event.title,
+                           'start': occurrence,
+                           'end': occurrence + (event.end - event.start),
+                           'description': event.description
+                       })
+
+           combined_results = list(event_results.values('id', 'title', 'start', 'end', 'description'))
+           combined_results.extend(recurring_events) 
+
+           session_results = StudySession.objects.filter(
+               Q(title__icontains=query) | 
+               Q(start_time__icontains=query)       
+           ).distinct().order_by('-start_time')
+
+       return render(request, 'search_results.html', {
+           'query': query, 
+           'event_results': combined_results, 
+           'session_results': session_results, 
+           'event_results_count': len(combined_results), 
+           'session_results_count': len(session_results)
+       })
+
+**Usage:**  
+Users can enter a keyword or phrase into the search bar on the StudySync dashboard. The system will return a list of matching events (including recurring events) and study sessions. This enables users to quickly locate sessions or events by title, description, or start time.
+
+- Search results include both one-time and recurring events.
+- Study sessions are also included if their title or start time matches the query.
+- Results are displayed in a dedicated search results page, grouped and counted for clarity.
+
+**Maintenance:**  
+- Ensure the search indexes all relevant fields (title, description, start time).
+- Update search logic if new searchable fields are added to events or study sessions.
+- Periodically review performance, especially as the number of events and sessions grows.
+- Maintain compatibility with recurring event logic to ensure all relevant occurrences are searchable.
 
 
 Additional Links
