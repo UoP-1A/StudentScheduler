@@ -256,9 +256,10 @@ def delete_calendar(request, calendar_id):
 @login_required
 def search_results(request):
     query = request.GET.get('q')
+    combined_results = []
+    session_results = []
 
     if query:
-        print(f"Search query: {query}")
 
         event_results = Event.objects.filter(
             Q(title__icontains=query) | 
@@ -294,15 +295,12 @@ def search_results(request):
             Q(start_time__icontains=query)       
         ).distinct().order_by('-start_time')
 
-    print(f"Event results count: {event_results.count}")
-    print(f"Event results: {list(event_results.values())}")
-
 
     return render(request, 'search_results.html', {
         'query': query, 
         'event_results': combined_results, 
         'session_results': session_results, 
         'event_results_count': len(combined_results), 
-        'session_results_count': session_results.count()
+        'session_results_count': len(session_results)
     })
 
