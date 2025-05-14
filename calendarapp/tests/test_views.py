@@ -621,7 +621,6 @@ class DeleteCalendarViewTests(TestCase):
         
 class SearchResultsViewTests(TestCase):
     def setUp(self):
-        self.factory = RequestFactory()
         self.client = Client()
         self.user = CustomUser.objects.create_user(
             username='testuser',
@@ -632,12 +631,14 @@ class SearchResultsViewTests(TestCase):
         self.event1 = Event.objects.create(
             title="Math Lecture",
             start=make_aware(datetime(2025, 5, 15, 10, 0)),
-            calendar=self.calendar
+            calendar=self.calendar,
+            rrule=""
         )
         self.event2 = Event.objects.create(
             title="Science Workshop",
             start=make_aware(datetime(2025, 5, 16, 12, 0)),
-            calendar=self.calendar
+            calendar=self.calendar,
+            rrule=""
         )
         self.session1 = StudySession.objects.create(
             title="Study Group - Software Engineering",
@@ -645,8 +646,9 @@ class SearchResultsViewTests(TestCase):
             end_time=make_aware(datetime(2025, 5, 17, 17, 0)).time(),
             date=make_aware(datetime(2025, 5, 17)).date(),
             calendar_id=self.calendar, 
-            host=self.user
+            host=self.user,
         )
+
         self.url = reverse('search_results')
 
     def test_search_results_no_input(self):
@@ -663,6 +665,7 @@ class SearchResultsViewTests(TestCase):
         """Test search results with a valid query (should match events and sessions)"""
         self.client.login(username='testuser', password='testpassword')
         response = self.client.get(self.url + '?q=Math')
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['query'], "Math")
         self.assertEqual(len(response.context['event_results']), 1)
@@ -695,6 +698,7 @@ class SearchResultsViewTests(TestCase):
     def test_search_results_date_query(self):
         """Test search results using date as query (should match date results)"""
         self.client.login(username='testuser', password='testpassword')
+        print(self.url)
         response = self.client.get(self.url + '?q=2025-05-15')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['event_results']), 1)
