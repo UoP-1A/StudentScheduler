@@ -8,6 +8,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.dateparse import parse_datetime
 from django.core.exceptions import ValidationError
 from django.utils.timezone import datetime
+from django.db.models import Q
 
 from .forms import CalendarUploadForm
 from .models import Calendar, Event
@@ -255,21 +256,19 @@ def delete_calendar(request, calendar_id):
 @login_required
 def search_results(request):
     query = request.GET.get('q')
-    combined_results = []
-    session_results = []
 
     if query:
         recurring_events = []
 
         now_time = datetime.now() - timedelta(days=365)
-        oneYear = datetime.now()
+        oneYear = datetime.now() + timedelta(days=365)
 
         for event in Event.objects.exclude(rrule__isnull=True).exclude(rrule=""):
             rule = rrulestr(event.rrule, dtstart=event.start)
             occurrences = list(rule.between(now_time, oneYear, inc=True))
 
             for occurrence in occurrences:
-                if query.lower() in event.title.lower() or query.lower() in event.description.lower():
+                if query.lower() in event.title.lower() or query.lower() in event.description.lower() or query.lower() in str(occurrence).lower():
                     recurring_events.append({
                         'id': event.id,
                         'title': event.title,
@@ -280,7 +279,7 @@ def search_results(request):
 
         recurring_events = sorted(recurring_events, key=lambda x: x['start'], reverse=True)
 
-        recurring_sessions = []  # Correctly name the list to avoid conflicts
+        recurring_sessions = [] 
 
         for recurring_session in RecurringStudySession.objects.select_related('session_id'):
             session = recurring_session.session_id
@@ -292,23 +291,28 @@ def search_results(request):
                 occurrences = list(rule)
 
                 for occurrence in occurrences:
-                    recurring_sessions.append({
-                        'id': session.id,
-                        'title': session.title,
-                        'start_time': occurrence,
-                        'end_time': occurrence + (datetime.combine(session.date, session.end_time) - datetime.combine(session.date, session.start_time)),
-                        'description': session.description,
-                        'host': session.host  
-                    })
+                        recurring_sessions.append({
+                            'id': session.id,
+                            'title': session.title,
+                            'start_time': occurrence,
+                            'end_time': occurrence + (datetime.combine(session.date, session.end_time) - datetime.combine(session.date, session.start_time)),
+                            'description': session.description,
+                            'host': session.host  
+                        })
 
         recurring_sessions = sorted(recurring_sessions, key=lambda x: x['start_time'], reverse=True)
+
+        session_results = StudySession.objects.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query)
+        ).distinct().order_by('start_time')
 
 
     return render(request, 'search_results.html', {
         'query': query, 
         'event_results': recurring_events, 
-        'session_results': recurring_sessions, 
+        'session_results': recurring_sessions + list(session_results), 
         'event_results_count': len(recurring_events), 
-        'session_results_count': len(recurring_sessions)
+        'session_results_count': len(recurring_sessions) + len(session_results)
     })
 
