@@ -256,62 +256,54 @@ def delete_calendar(request, calendar_id):
 @login_required
 def search_results(request):
     query = request.GET.get('q')
-    
-    # Initialize all result variables with empty lists
     recurring_events = []
+    single_events = []
+    session_results = []
     recurring_sessions = []
-    session_results = StudySession.objects.none()  # Empty queryset
-    
+
     if query:
+        # Search for recurring events
         now_time = datetime.now() - timedelta(days=365)
         oneYear = datetime.now() + timedelta(days=365)
 
-        for event in Event.objects.exclude(rrule__isnull=True).exclude(rrule=""):
-            try:
-                rule = rrulestr(event.rrule, dtstart=event.start)
-                occurrences = list(rule.between(now_time, oneYear, inc=True))
+        for event in Event.objects.exclude(rrule=None):
+            rule = rrulestr(event.rrule, dtstart=event.start)
+            occurrences = list(rule.between(now_time, oneYear, inc=True))
 
-                for occurrence in occurrences:
-                    if (query.lower() in event.title.lower() or 
-                        query.lower() in event.description.lower() or 
-                        query.lower() in str(occurrence).lower()):
-                        recurring_events.append({
-                            'id': event.id,
-                            'title': event.title,
-                            'start': occurrence,
-                            'end': occurrence + (event.end - event.start),
-                            'description': event.description
-                        })
-            except:
-                continue  # Skip events with invalid RRULE
+            for occurrence in occurrences:
+                if query.lower() in event.title.lower() or query.lower() in event.description.lower() or query.lower() in str(occurrence).lower():
+                    recurring_events.append({
+                        'id': event.id,
+                        'title': event.title,
+                        'start': occurrence,
+                        'end': occurrence + (event.end - event.start),
+                        'description': event.description
+                    })
 
-        non_recurring_events = Event.objects.filter(
-            Q(rrule__isnull=True) | Q(rrule=""),
-            Q(title__icontains=query) | Q(description__icontains=query) | Q(start__icontains=query)
-        )
-
-        for event in non_recurring_events:
-            recurring_events.append({
-                'id': event.id,
-                'title': event.title,
-                'start': event.start,
-                'end': event.end,
-                'description': event.description
-            })        
+        # Search for single events
+        single_events = Event.objects.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(start__icontains=query),
+            rrule=None
+        ).values('id', 'title', 'start', 'end', 'description')
 
         recurring_events = sorted(recurring_events, key=lambda x: x['start'], reverse=True)
+        single_events = sorted(single_events, key=lambda x: x['start'], reverse=True)
+
+        # Rest of your code for sessions...
+        recurring_sessions = [] 
 
         for recurring_session in RecurringStudySession.objects.select_related('session_id'):
             session = recurring_session.session_id
             if query.lower() in session.title.lower():
-                try:
-                    rule = rrulestr(
-                        f"FREQ=WEEKLY;COUNT={recurring_session.recurrence_amount}",
-                        dtstart=datetime.combine(session.date, session.start_time)
-                    )
-                    occurrences = list(rule)
+                rule = rrulestr(
+                    f"FREQ=WEEKLY;COUNT={recurring_session.recurrence_amount}",
+                    dtstart=datetime.combine(session.date, session.start_time)
+                )
+                occurrences = list(rule)
 
-                    for occurrence in occurrences:
+                for occurrence in occurrences:
                         recurring_sessions.append({
                             'id': session.id,
                             'title': session.title,
@@ -320,8 +312,6 @@ def search_results(request):
                             'description': session.description,
                             'host': session.host  
                         })
-                except:
-                    continue  # Skip invalid recurrence rules
 
         recurring_sessions = sorted(recurring_sessions, key=lambda x: x['start_time'], reverse=True)
 
@@ -329,11 +319,13 @@ def search_results(request):
             Q(title__icontains=query) |
             Q(description__icontains=query)
         ).distinct().order_by('start_time')
-    
-    return render(request, 'search_results.html', {
-        'query': query, 
-        'event_results': recurring_events, 
-        'session_results': list(recurring_sessions) + list(session_results), 
-        'event_results_count': len(recurring_events), 
+
+    combined_results = {
+        'query': query,
+        'event_results': list(recurring_events) + list(single_events),
+        'session_results': list(recurring_sessions) + list(session_results),
+        'event_results_count': len(recurring_events) + len(single_events),
         'session_results_count': len(recurring_sessions) + len(session_results)
-    })
+    }
+
+    return render(request, 'search_results.html', combined_results)
