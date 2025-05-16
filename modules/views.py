@@ -55,7 +55,6 @@ def add_grade(request):
         grade_form = GradeCreateForm(request.POST)
         if grade_form.is_valid():
             try:
-                print("trying")
                 Grade.objects.create(
                     module=grade_form.cleaned_data['module'],
                     name=grade_form.cleaned_data['name'],

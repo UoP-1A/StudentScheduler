@@ -35,7 +35,6 @@ def create(request, automated=0):
     else:
         form = AutoStudySessionForm
     if request.method == 'POST':
-        print(request.POST)
         if automated == 0:
             form = ManualStudySessionForm(request.POST)
         else:
@@ -132,7 +131,6 @@ def create(request, automated=0):
                 if days_left_until_mon != 0:
                     start_of_week = (today + timedelta(days=days_left_until_mon)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-                print("start of week(", start_of_week, ") end of week(", end_of_week , ") - day now (", today , ") days left until sat:", days_left_until_sat, "days left until mon:", days_left_until_mon)
                 events_left_this_week = []
                 for event in events:
                     event_start = parse_datetime(event['start'])
@@ -164,7 +162,6 @@ def create(request, automated=0):
                     for event in day_of_events:
                         hours += round((datetime.fromisoformat(event['end']) - datetime.fromisoformat(event['start'])).seconds / 3600)
                     hours_per_day.append(hours)
-                print("HOURS PER DAY", hours_per_day)
 
 
 
@@ -185,13 +182,12 @@ def create(request, automated=0):
                             minimum_hours = 0
                         day += 1
                     if minimum_hours != 0:
-                        print("No available day for new session")
                         #should break out of function here ngl
-                        
+                        pass
+
                 #if all days have 0 hours, pick the next day at noon
                 day_of_events = week_of_events[day_of_new_session]
                 if len(day_of_events) == 0:
-                    print("No events for this day")
                     auto_date = today + timedelta(days=1)
                     auto_date = auto_date.replace(hour=12, minute=0, second=0, microsecond=0)
                     study_session.date = auto_date.date()
@@ -217,9 +213,6 @@ def create(request, automated=0):
                         hour_index = hours_between_each_event.index(hour)
                         if hour == timedelta(hours=2):
                             #if there is a 2 hour gap, put the session at the start and leave the user a 1 hour break
-                            print("session created for 1 hour")
-                            print("gap is ", hour, " hours, gap index is ", hour_index, ", previous event ends at ", day_of_events[hour_index]['end'], ", next event starts at ", day_of_events[hour_index+1]['start'])
-                            
 
                             
                             session_created = True
@@ -227,8 +220,6 @@ def create(request, automated=0):
                             duration = 1
                         elif hour == timedelta(hours=3):
                             #if there is a 3 hour gap, put the session next to the event that is shortest and leave an hour break with the other
-                            print("session created for 2 hours")
-                            print("gap is ", hour, " hours, gap index is ", hour_index, ", previous event ends at ", day_of_events[hour_index]['end'], ", next event starts at ", day_of_events[hour_index+1]['start'])
                             session_created = True
                             duration_of_previous = datetime.fromisoformat(day_of_events[hour_index]['end']) - datetime.fromisoformat(day_of_events[hour_index]['start'])
                             duration_of_next = datetime.fromisoformat(day_of_events[hour_index+1]['end']) - datetime.fromisoformat(day_of_events[hour_index+1]['start'])
@@ -240,8 +231,6 @@ def create(request, automated=0):
                                 duration = 2
                         elif hour >= timedelta(hours=4):
                             #if there is a gap of 4+ hrs, put session 1 hour after the end of the last event and have it last 2 hours
-                            print("session created for 2 hours")
-                            print("gap is ", hour, " hours, gap index is ", hour_index, ", previous event ends at ", day_of_events[hour_index]['end'], ", next event starts at ", day_of_events[hour_index+1]['start'])
                             session_created = True
                             auto_date = datetime.fromisoformat(day_of_events[hour_index]['end']) + timedelta(hours=1+timezone_offset)
                             duration = 2
@@ -251,36 +240,28 @@ def create(request, automated=0):
                         before_event = timedelta(0)
                         after_event = timedelta(0)
                         if (datetime.fromisoformat(day_of_events[0]['start']) - datetime.fromisoformat(day_of_events[0]['start']).replace(hour=9, minute=0, second=0, microsecond=0)).total_seconds()/3600 >= 2.0:
-                            print("before")
                             before_event = datetime.fromisoformat(day_of_events[0]['start']) - datetime.fromisoformat(day_of_events[0]['start']).replace(hour=9, minute=0, second=0, microsecond=0)
                         if (datetime.fromisoformat(day_of_events[-1]['end']).replace(hour=18, minute=0, second=0, microsecond=0) - datetime.fromisoformat(day_of_events[-1]['end'])).total_seconds()/3600 >= 2.0:
-                            print("after")
                             after_event = datetime.fromisoformat(day_of_events[-1]['end']).replace(hour=18, minute=0, second=0, microsecond=0) - datetime.fromisoformat(day_of_events[-1]['end'])
 
                         #put session either before or after depending on which gap is bigger
                         if before_event > after_event:
                             before_event = timedelta(hours=9) - before_event
                             if before_event == timedelta(hours=2):
-                                print("session created before event ")
                                 session_created = True
                                 auto_date = datetime.fromisoformat(day_of_events[0]['start']) - timedelta(hours=2+timezone_offset)
                                 duration = 1
                             else:
-                                print("session created before event ")
                                 session_created = True
-                                print("start of event: ", localtime(datetime.fromisoformat(day_of_events[0]['start'])))
                                 auto_date = datetime.fromisoformat(day_of_events[0]['start']) - timedelta(hours=3+timezone_offset)
-                                print("auto date: ", auto_date)
                                 duration = 2
                         elif after_event > before_event:
                             after_event = timedelta(hours=9) - after_event
                             if after_event == timedelta(hours=2):
-                                print("session created after event ")
                                 session_created = True
                                 auto_date = datetime.fromisoformat(day_of_events[-1]['end']) + timedelta(hours=1+timezone_offset)
                                 duration = 1
                             else:
-                                print("session created after event ")
                                 session_created = True
                                 auto_date = datetime.fromisoformat(day_of_events[-1]['end']) + timedelta(hours=1+timezone_offset)
                                 duration = 2
